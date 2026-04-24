@@ -1,0 +1,93 @@
+/* Google Fonts: Playfair Display para títulos elegantes (Contacto) */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&display=swap');
+
+/* Importaciones base de Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ====================================================================
+  1. DECLARACIÓN DE FUENTES LOCALES (DESDE LA CARPETA 'SRC')
+  ====================================================================
+*/
+
+/* Fuente para TÍTULOS */
+@font-face {
+  font-family: 'Bodoni';
+  src: url('./fonts/BodoniStd.otf') format('opentype'); 
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Alias explícito para Bodoni Std (mismo archivo) */
+@font-face {
+  font-family: 'Bodoni Std';
+  src: url('./fonts/BodoniStd.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Fuente para TEXTO */
+@font-face {
+  font-family: 'Miles Light';
+  src: url('./fonts/RNSMiles-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+
+/* ====================================================================
+  2. ESTILOS GLOBALES BASE CON @layer
+  ====================================================================
+*/
+
+@layer base {
+  body {
+    /* APLICACIÓN DE LA PALETA AJUSTADA - FONDO CASI BLANCO */
+    @apply bg-background text-text-main;
+    
+    /* CORRECCIÓN: Usamos la propiedad CSS estándar para la fuente base. 
+       Esto evita el error de compilación con @apply. */
+    font-family: 'Miles Light', sans-serif;
+    
+    overflow-x: hidden; /* Evita el desplazamiento horizontal */
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    /* APLICACIÓN DE LA PALETA OFICIAL: Azul marino para títulos */
+    @apply text-primary font-bold;
+    
+    /* CORRECCIÓN: Usamos la propiedad CSS estándar para la fuente de los títulos. */
+    font-family: 'Bodoni Std', 'Bodoni', serif;
+  }
+
+  button {
+    /* BOTONES CON LA PALETA OFICIAL */
+    @apply bg-accent text-primary px-6 py-3 rounded-lg font-bold shadow-sm transition-all duration-200 ease-in-out hover:shadow-md disabled:opacity-50;
+    
+    /* CORRECCIÓN: Usamos la propiedad CSS estándar para la fuente de los botones. */
+    font-family: 'Bodoni Std', 'Bodoni', serif;
+  }
+
+  a {
+    /* ENLACES CON LA PALETA OFICIAL */
+    @apply text-primary hover:text-accent transition-colors duration-200 font-medium;
+    
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+}
+
+
+/* ====================================================================
+  3. CLASES PERSONALIZADAS (Opcional)
+  ====================================================================
+*/
+
+.flip-card {
+  perspective: 1000px;
+}
+

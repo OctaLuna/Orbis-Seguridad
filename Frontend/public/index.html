@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bicentenario UCB Frontend</title>
+  <link rel="icon" href="%PUBLIC_URL%/media/header/logo.png" id="favicon" />
+    <meta name="description" content="Bicentenario UCB Frontend" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <!-- 
+      HEMOS ELIMINADO TODAS LAS ETIQUETAS <link> a Google Fonts 
+      y la etiqueta <style> que causaban el conflicto.
+      Ahora, el único responsable de los estilos es tu código de React y CSS.
+    -->
+    <script>
+      (function () {
+        // Rutas relativas dentro de public
+        var lightImg = '%PUBLIC_URL%/media/header/logo.png';
+        var darkImg = '%PUBLIC_URL%/media/header/logo2.png';
+        var ZOOM = 1.5; // factor de zoom por defecto
+        var BASE_SIZE = 64; // tamaño base en px para favicon canvas
+
+        var link = document.getElementById('favicon') || document.querySelector('link[rel="icon"]');
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          link.id = 'favicon';
+          document.head.appendChild(link);
+        }
+
+        // Dada una URL de imagen, crea un dataURL PNG escalado usando canvas
+        function fetchAndMakeZoomedDataUrl(imgUrl, size, scale) {
+          size = size || BASE_SIZE;
+          scale = scale || ZOOM;
+          return fetch(imgUrl, { cache: 'force-cache' })
+            .then(function (res) {
+              if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+              return res.blob();
+            })
+            .then(function (blob) {
+              // crear bitmap si está disponible (más rápido)
+              if (window.createImageBitmap) {
+                return createImageBitmap(blob);
+              }
+              return new Promise(function (resolve, reject) {
+                var img = new Image();
+                img.onload = function () { resolve(img); };
+                img.onerror = reject;
+                img.src = URL.createObjectURL(blob);
+              });
+            })
+            .then(function (img) {
+              var outSize = Math.round(size * scale);
+              var canvas = document.createElement('canvas');
+              canvas.width = outSize;
+              canvas.height = outSize;
+              var ctx = canvas.getContext('2d');
+              // Limpiar y dibujar el fondo transparente
+              ctx.clearRect(0, 0, outSize, outSize);
+              // Calcular el ajuste para que la imagen se centre y cubra
+              var iw = img.width || size;
+              var ih = img.height || size;
+              var ratio = Math.max(outSize / iw, outSize / ih);
+              var dw = Math.round(iw * ratio);
+              var dh = Math.round(ih * ratio);
+              var dx = Math.round((outSize - dw) / 2);
+              var dy = Math.round((outSize - dh) / 2);
+              try {
+                // drawImage soporta ImageBitmap y HTMLImageElement
+                ctx.drawImage(img, 0, 0, iw, ih, dx, dy, dw, dh);
+              } catch (err) {
+                // fallback simple
+                ctx.drawImage(img, dx, dy, dw, dh);
+              }
+              // liberar object URL si aplica
+              if (img && img.constructor && img.constructor.name === 'HTMLImageElement' && img.src && img.src.startsWith('blob:')) {
+                URL.revokeObjectURL(img.src);
+              }
+              return canvas.toDataURL('image/png');
+            });
+        }
+
+        function setFaviconToUrl(imgUrl) {
+          // intenta crear un dataURL zoomed; si falla, asigna la URL original
+          fetchAndMakeZoomedDataUrl(imgUrl, BASE_SIZE, ZOOM)
+            .then(function (dataUrl) {
+              link.href = dataUrl;
+            })
+            .catch(function (err) {
+              console.warn('No se pudo generar favicon escalado, usando URL directa:', err);
+              link.href = imgUrl;
+            });
+        }
+
+        function handleSchemeChange(e) {
+          var isDark = e && typeof e.matches === 'boolean' ? e.matches : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          setFaviconToUrl(isDark ? darkImg : lightImg);
+        }
+
+        var mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+        try {
+          if (mq) {
+            handleSchemeChange(mq);
+            if (typeof mq.addEventListener === 'function') {
+              mq.addEventListener('change', handleSchemeChange);
+            } else if (typeof mq.addListener === 'function') {
+              mq.addListener(handleSchemeChange);
+            }
+          } else {
+            setFaviconToUrl(lightImg);
+          }
+        } catch (err) {
+          console.error('Error setting zoomed favicon', err);
+          link.href = lightImg;
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+import { RegisterRubrosDto } from "./rubros/register-rubros.dto";
+import { RegisterTiposSocietariosDto } from "./tipos-societarios/register-tipos-societarios.dto";
+import { RegisterFamiliaDto } from "./register-familia.dto";
+import { RegisterSedeDto } from "./register-sede.dto";
+import { RegisterReconocimientoDto } from "./register-reconocimiento.dto";
+import { RegisterImplementacionDto } from "./implementacion/register-implementacion.dto";
+import { RegisterHitoDto } from "./register-hito.dto";
+export declare class RegisterEmpresaDto {
+    nombre: string;
+    rubros: RegisterRubrosDto;
+    actividad: string;
+    items: string[];
+    servicios: string[];
+    direccionWeb: string;
+    fechaFundacion: string;
+    fundadores: string[];
+    tiposSocietarios: RegisterTiposSocietariosDto;
+    tamanioEmpresa: number;
+    mision: string;
+    vision: string;
+    familia: RegisterFamiliaDto;
+    sedes: RegisterSedeDto[];
+    municipios: number[];
+    paisesOperaInternacionalmente: number[];
+    reconocimientos: RegisterReconocimientoDto[];
+    imagenes: string[];
+    mensajeConmemorativo: string;
+    implementacion: RegisterImplementacionDto;
+    hitos: RegisterHitoDto[];
+}

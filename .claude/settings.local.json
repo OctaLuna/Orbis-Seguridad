@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -i \"\\\\.md$\")",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(BROWSER=none npm start)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill /PID 3996 /F)",
+      "PowerShell(Stop-Process -Id 3996 -Force)"
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+import { TamanioEmpresaPrivateDto } from "../modules/tamanios-empresas/dto/tamanio-empresa-private.dto";
+import { RubroEmpresaPrivateDto } from "../modules/rubros/modules/rubros-empresas/dto/rubro-empresa-private.dto";
+import { SedePrivateDto } from "../modules/sedes/dto/sede-private.dto";
+import { MunicipioPrivateDto } from "../modules/municipios/dto/municipio-private.dto";
+import { ServicioPrivateDto } from "../modules/servicios/dto/servicio-private.dto";
+import { ItemPrivateDto } from "../modules/items/dto/item-private.dto";
+import { EmpresaTipoSocietarioPrivateDto } from "../modules/tipos-societarios/modules/empresas-tipos-societarios/dto/empresa-tipo-societario-private.dto";
+import { HitoPublicDto } from "../modules/hitos/dto/hito-public.dto";
+import { PremioPrivateDto } from "../modules/premios/dto/premio-private.dto";
+import { FamiliaPrivateDto } from "../modules/familias/dto/familia-private.dto";
+import { PaisDto } from "../modules/paises/dto/pais.dto";
+import { FundadorDto } from "../modules/fundadores/dto/fundador.dto";
+import { ImagenCardDto } from "../modules/imagenes/dto/imagen-card.dto";
+import { ImplementacionPrivateDto } from "../modules/implementaciones/dto/implementacion-private.dto";
+export declare class EmpresaPrivateDto {
+    id: number;
+    nombreComercial: string;
+    fechaFundacion: string;
+    vision: string;
+    mision: string;
+    direccionWeb: string;
+    tamanioEmpresa: TamanioEmpresaPrivateDto;
+    mensaje: string;
+    actividad: string;
+    rubrosEmpresa: RubroEmpresaPrivateDto[];
+    sedes: SedePrivateDto[];
+    municipios: MunicipioPrivateDto[];
+    servicios: ServicioPrivateDto[];
+    items: ItemPrivateDto[];
+    tiposSocietariosEmpresa: EmpresaTipoSocietarioPrivateDto[];
+    hitos: HitoPublicDto[];
+    premios: PremioPrivateDto[];
+    familias: FamiliaPrivateDto[];
+    paisesOperaInteranacionalmente: PaisDto[];
+    fundadores: FundadorDto[];
+    imagenes: ImagenCardDto[];
+    implementacion: ImplementacionPrivateDto;
+}

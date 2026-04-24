@@ -1,0 +1,37 @@
+import { TamaniosEmpresasService } from "src/modules/empresas/modules/tamanios-empresas/services/tamanios-empresas.service";
+import { DataSource } from "typeorm";
+import { RegisterEmpresaDto } from "../dto/register-empresa.dto";
+import { EmpresasService } from "src/modules/empresas/services/empresas.service";
+import { FundadoresService } from "src/modules/empresas/modules/fundadores/services/fundadores.service";
+import { ImagenesService } from "src/modules/empresas/modules/imagenes/services/imagenes.service";
+import { ServiciosService } from "src/modules/empresas/modules/servicios/services/servicios.service";
+import { FamiliasService } from "src/modules/empresas/modules/familias/services/familias.service";
+import { RubrosEmpresasService } from "src/modules/empresas/modules/rubros/modules/rubros-empresas/services/rubros-empresas.service";
+import { ItemsService } from "src/modules/empresas/modules/items/services/items.service";
+import { EmpresasTiposSocietariosService } from "src/modules/empresas/modules/tipos-societarios/modules/empresas-tipos-societarios/services/empresas-tipos-societarios.service";
+import { SedesService } from "src/modules/empresas/modules/sedes/services/sedes.service";
+import { MunicipiosEmpresaService } from "src/modules/empresas/modules/municipios/modules/municipios-empresa/services/municipios-empresa.service";
+import { OperacionesInternacionalesService } from "src/modules/empresas/modules/operaciones-internacionales/services/operaciones-internacionales.service";
+import { PremiosService } from "src/modules/empresas/modules/premios/services/premios.service";
+import { ImplementacionesService } from "src/modules/empresas/modules/implementaciones/services/implementaciones.service";
+import { HitosService } from "src/modules/empresas/modules/hitos/services/hitos.service";
+export declare class FormularioService {
+    private readonly dataSource;
+    private readonly tamaniosEmpresasService;
+    private readonly empresasService;
+    private readonly fundadoresService;
+    private readonly imagenesService;
+    private readonly serviciosService;
+    private readonly familiasService;
+    private readonly rubrosEmpresasService;
+    private readonly itemsService;
+    private readonly empresasTiposSocietariosService;
+    private readonly sedesService;
+    private readonly municipiosEmpresasService;
+    private readonly operacionesInternacionalesService;
+    private readonly premiosService;
+    private readonly implementacionesService;
+    private readonly hitosService;
+    constructor(dataSource: DataSource, tamaniosEmpresasService: TamaniosEmpresasService, empresasService: EmpresasService, fundadoresService: FundadoresService, imagenesService: ImagenesService, serviciosService: ServiciosService, familiasService: FamiliasService, rubrosEmpresasService: RubrosEmpresasService, itemsService: ItemsService, empresasTiposSocietariosService: EmpresasTiposSocietariosService, sedesService: SedesService, municipiosEmpresasService: MunicipiosEmpresaService, operacionesInternacionalesService: OperacionesInternacionalesService, premiosService: PremiosService, implementacionesService: ImplementacionesService, hitosService: HitosService);
+    registerEmpresa(data: RegisterEmpresaDto): Promise<import("../../../../modules/empresas/entities/empresa.entity").Empresa>;
+}

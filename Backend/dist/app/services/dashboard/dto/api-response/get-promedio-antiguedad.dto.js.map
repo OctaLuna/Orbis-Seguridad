@@ -1,0 +1,1 @@
+{"version":3,"file":"get-promedio-antiguedad.dto.js","sourceRoot":"","sources":["../../../../../../src/app/services/dashboard/dto/api-response/get-promedio-antiguedad.dto.ts"],"names":[],"mappings":";;;;;;;;;;;;AAAA,6CAA8C;AAE9C,MAAa,wBAAwB;IAKjC,QAAQ,CAAQ;CACnB;AAND,4DAMC;AADG;IAJC,IAAA,qBAAW,EAAC;QACT,WAAW,EAAE,uBAAuB;QACpC,IAAI,EAAE,MAAM;KACf,CAAC;;0DACc"}

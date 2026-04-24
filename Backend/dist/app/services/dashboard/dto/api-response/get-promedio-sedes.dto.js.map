@@ -1,0 +1,1 @@
+{"version":3,"file":"get-promedio-sedes.dto.js","sourceRoot":"","sources":["../../../../../../src/app/services/dashboard/dto/api-response/get-promedio-sedes.dto.ts"],"names":[],"mappings":";;;;;;;;;;;;AAAA,6CAA8C;AAE9C,MAAa,mBAAmB;IAK5B,QAAQ,CAAQ;CACnB;AAND,kDAMC;AADG;IAJC,IAAA,qBAAW,EAAC;QACT,WAAW,EAAE,UAAU;QACvB,IAAI,EAAE,MAAM;KACf,CAAC;;qDACc"}

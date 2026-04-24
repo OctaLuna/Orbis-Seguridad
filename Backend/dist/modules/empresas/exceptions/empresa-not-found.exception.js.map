@@ -1,0 +1,1 @@
+{"version":3,"file":"empresa-not-found.exception.js","sourceRoot":"","sources":["../../../../src/modules/empresas/exceptions/empresa-not-found.exception.ts"],"names":[],"mappings":";;;AAAA,2CAAmD;AAEnD,MAAa,wBAAyB,SAAQ,0BAAiB;IAC3D,YAAY,SAAiB;QACzB,KAAK,CAAC;YACF,OAAO,EAAE,uBAAuB,SAAS,aAAa;SACzD,CAAC,CAAA;IACN,CAAC;CACJ;AAND,4DAMC"}
