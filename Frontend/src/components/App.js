@@ -3,18 +3,18 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
 import Navbar from './navbar.jsx';
 import Header from './header';
-// import RevistaPage from '../screens/revistaPage.jsx';  // Commented out temporarily
 import HomePage from '../screens/homePage';
 import EmpresasPage from '../screens/empresasPage';
 import ContactoPage from '../screens/contactoPage';
 import HistoriaPage from '../screens/historiaPage';
-import EquipoPage from '../screens/equipoPage.js'; // Importar el componente EquipoPage
+import EquipoPage from '../screens/equipoPage.js';
 import EditorEmpresasPage from '../screens/editorEmpresasPage';
 import PanelEditorUsuarios from './panelEditorUsuarios_temp';
+import CambiarPasswordPage from '../screens/cambiarPasswordPage.jsx';
+import ResetPasswordPage from '../screens/resetPasswordPage.jsx';
 import FooterBar from './footerBar.js';
 import { logout as logoutService } from '../services/authService';
 import { setAuthToken } from '../services/api';
-
 
 function RedirectDashboard() {
   useEffect(() => {
@@ -52,13 +52,16 @@ function App() {
   }, []);
 
   const handleLogin = useCallback((authData) => {
-    if (!authData?.user || !authData?.token) {
-      return;
-    }
-
+    if (!authData?.user || !authData?.token) return;
     localStorage.setItem('authData', JSON.stringify(authData));
     setAuthToken(authData.token);
     setAuthState(authData);
+  }, []);
+
+  // Usado por CambiarPasswordPage para limpiar must_change_password sin volver a hacer login
+  const handleAuthUpdate = useCallback((updatedAuth) => {
+    localStorage.setItem('authData', JSON.stringify(updatedAuth));
+    setAuthState(updatedAuth);
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -68,19 +71,21 @@ function App() {
   }, []);
 
   const loggedInUser = authState?.user ?? null;
+  // Acceso admin: SUPERADMIN=1, ADMIN_RRHH=2 para usuarios; +ADMIN_EMPRESAS=3 para empresas
+  const canAccessAdmin = loggedInUser && loggedInUser.idRol <= 3;
+  const canManageUsers = loggedInUser && loggedInUser.idRol <= 2;
 
   return (
     <Router>
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-white to-gray-50/50">
-        <Header 
-          loggedInUser={loggedInUser} 
-          onLogout={handleLogout} 
-          onLogin={handleLogin} 
+        <Header
+          loggedInUser={loggedInUser}
+          onLogout={handleLogout}
+          onLogin={handleLogin}
           toggleMobileMenu={toggleMobileMenu}
         />
-        {/* CORRECCIÓN: Asegurarnos de pasar loggedInUser al Navbar */}
-        <Navbar 
-          loggedInUser={loggedInUser} 
+        <Navbar
+          loggedInUser={loggedInUser}
           isMobileMenuOpen={isMobileMenuOpen}
           toggleMobileMenu={toggleMobileMenu}
         />
@@ -89,10 +94,23 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage loggedInUser={loggedInUser} />} />
             <Route path="/empresas" element={<EmpresasPage loggedInUser={loggedInUser} />} />
-            {/* <Route path="/revistaPage" element={<RevistaPage />} /> */}
             <Route path="/contacto" element={<ContactoPage />} />
             <Route path="/historia" element={<HistoriaPage />} />
-            <Route path="/equipo" element={<EquipoPage />} /> {/* Nueva ruta agregada */}
+            <Route path="/equipo" element={<EquipoPage />} />
+
+            {/* M-13: Cambio de contraseña (obligatorio o voluntario) */}
+            <Route
+              path="/cambiar-password"
+              element={
+                <CambiarPasswordPage
+                  authState={authState}
+                  onAuthUpdate={handleAuthUpdate}
+                />
+              }
+            />
+
+            {/* M-16: Recuperación de contraseña (pública) */}
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             <Route
               path="/dashboards"
@@ -107,33 +125,31 @@ function App() {
               }
             />
 
-            {loggedInUser && loggedInUser.idRol === 1 && (
-              <>
-                <Route path="/editor-empresas" element={<EditorEmpresasPage />} />
-                <Route path="/panel-usuarios" element={<PanelEditorUsuarios />} />
-              </>
-            )}
+            <Route
+              path="/editor-empresas"
+              element={
+                canAccessAdmin ? (
+                  <EditorEmpresasPage />
+                ) : (
+                  <div className="p-12 text-center text-accent font-bold">
+                    No tienes permisos para acceder a esta página.
+                  </div>
+                )
+              }
+            />
 
-            {loggedInUser && loggedInUser.idRol !== 1 && (
-              <>
-                <Route
-                  path="/editor-empresas"
-                  element={
-                    <div className="p-12 text-center text-accent font-bold">
-                      No tienes permisos para acceder a esta página.
-                    </div>
-                  }
-                />
-                <Route
-                  path="/panel-usuarios"
-                  element={
-                    <div className="p-12 text-center text-accent font-bold">
-                      No tienes permisos para acceder a esta página.
-                    </div>
-                  }
-                />
-              </>
-            )}
+            <Route
+              path="/panel-usuarios"
+              element={
+                canManageUsers ? (
+                  <PanelEditorUsuarios />
+                ) : (
+                  <div className="p-12 text-center text-accent font-bold">
+                    No tienes permisos para acceder a esta página.
+                  </div>
+                )
+              }
+            />
           </Routes>
         </main>
 

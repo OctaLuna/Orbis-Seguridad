@@ -15,6 +15,7 @@ const passport_1 = require("@nestjs/passport");
 const jwt_1 = require("@nestjs/jwt");
 const jwt_config_1 = require("../../../config/services/jwt.config");
 const jwt_strategy_1 = require("./services/jwt.strategy");
+const email_module_1 = require("../../../shared/services/email/email.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -22,6 +23,7 @@ exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
         imports: [
             usuarios_module_1.UsuariosModule,
+            email_module_1.EmailModule,
             passport_1.PassportModule.register({ defaultStrategy: 'jwt' }),
             jwt_1.JwtModule.registerAsync({
                 inject: [jwt_config_1.MyJwtConfig],

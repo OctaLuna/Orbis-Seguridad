@@ -14,6 +14,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FormularioController = void 0;
 const common_1 = require("@nestjs/common");
+const auth_roles_guard_1 = require("../../auth/guards/auth-roles.guard");
+const roles_const_1 = require("../../../../shared/constants/roles.const");
 const formulario_service_1 = require("../services/formulario.service");
 const swagger_1 = require("@nestjs/swagger");
 const utils_1 = require("../../../../common/utils");
@@ -35,6 +37,7 @@ let FormularioController = class FormularioController {
 exports.FormularioController = FormularioController;
 __decorate([
     (0, common_1.Post)(),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_EMPRESAS])),
     (0, swagger_1.ApiOperation)({
         summary: 'Api para registrar la empresa mediante el formulario'
     }),

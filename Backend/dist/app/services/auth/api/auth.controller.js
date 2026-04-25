@@ -22,6 +22,7 @@ const swagger_1 = require("@nestjs/swagger");
 const common_response_dto_1 = require("../../../../shared/dto/common-response.dto");
 const login_response_dto_1 = require("../dto/login-response.dto");
 const swagger_response_utils_1 = require("../../../../common/utils/swagger/swagger-response.utils");
+const reset_password_dto_1 = require("../dto/reset-password.dto");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -36,6 +37,20 @@ let AuthController = class AuthController {
     async login(data, res) {
         const response = await this.authService.login(data);
         return (0, utils_1.OkRes)(res, response);
+    }
+    async forgotPassword(dto, res) {
+        await this.authService.solicitarResetPassword(dto.correo);
+        return (0, utils_1.OkRes)(res, {
+            message: 'Si existe una cuenta con ese correo, recibirás un enlace para restablecer tu contraseña.'
+        });
+    }
+    async validateResetToken(token, res) {
+        const result = await this.authService.validarTokenReset(token);
+        return (0, utils_1.OkRes)(res, result);
+    }
+    async resetPassword(dto, res) {
+        await this.authService.confirmarResetPassword(dto.token, dto.passwordNuevo);
+        return (0, utils_1.OkRes)(res, { message: 'Contraseña restablecida exitosamente.' });
     }
 };
 exports.AuthController = AuthController;
@@ -79,6 +94,37 @@ __decorate([
     __metadata("design:paramtypes", [login_dto_1.LoginDto, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)('/forgot-password'),
+    (0, swagger_1.ApiOperation)({ summary: 'Solicitar restablecimiento de contraseña por correo' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Correo enviado si la cuenta existe', type: common_response_dto_1.CommonResponseDto }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [reset_password_dto_1.ForgotPasswordDto, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, common_1.Get)('/reset-password/validate/:token'),
+    (0, swagger_1.ApiOperation)({ summary: 'Validar si un token de restablecimiento es válido' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Estado de validez del token', type: common_response_dto_1.CommonResponseDto }),
+    __param(0, (0, common_1.Param)('token')),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "validateResetToken", null);
+__decorate([
+    (0, common_1.Post)('/reset-password'),
+    (0, swagger_1.ApiOperation)({ summary: 'Confirmar el restablecimiento de contraseña con token' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Contraseña actualizada exitosamente', type: common_response_dto_1.CommonResponseDto }),
+    (0, swagger_1.ApiBadRequestResponse)((0, swagger_response_utils_1.SwaggerBadRequestCommon)()),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [reset_password_dto_1.ResetPasswordDto, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('api/auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

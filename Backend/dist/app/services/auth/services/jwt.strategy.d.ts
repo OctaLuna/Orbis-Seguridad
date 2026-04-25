@@ -9,6 +9,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
         sub: any;
         usuario: any;
         rol: any;
+        must_change_password: any;
     }>;
 }
 export {};

@@ -20,12 +20,17 @@ const typeorm_2 = require("typeorm");
 const utils_1 = require("../../../common/utils");
 const roles_const_1 = require("../../../shared/constants/roles.const");
 const usuarios_service_1 = require("./usuarios.service");
+const email_service_1 = require("../../../shared/services/email/email.service");
+const alias_generator_util_1 = require("../../../common/utils/alias-generator.util");
+const date_fns_1 = require("date-fns");
 let UsuariosAuthService = class UsuariosAuthService {
     usuarioRepository;
     usuariosService;
-    constructor(usuarioRepository, usuariosService) {
+    emailService;
+    constructor(usuarioRepository, usuariosService, emailService) {
         this.usuarioRepository = usuarioRepository;
         this.usuariosService = usuariosService;
+        this.emailService = emailService;
     }
     sanitize(u) {
         if (!u)
@@ -95,12 +100,55 @@ let UsuariosAuthService = class UsuariosAuthService {
         await this.usuarioRepository.delete(id);
         return true;
     }
+    async crearUsuario(dto) {
+        const alias = await this.generarAliasUnico(dto.nombre, dto.apellido);
+        const tempPassword = this.generarPasswordTemporal();
+        const hash = await (0, utils_1.hashPassword)(tempPassword);
+        const nuevoUsuario = this.usuarioRepository.create({
+            nombre: dto.nombre,
+            apellido: dto.apellido,
+            usuario: alias,
+            correo: `${alias}@orbis.com`,
+            correoReal: dto.correoReal,
+            contrasenia: hash,
+            idRol: dto.idRol,
+            mustChangePassword: true,
+            passwordExpiresAt: (0, date_fns_1.addDays)(new Date(), 60),
+        });
+        const guardado = await this.usuarioRepository.save(nuevoUsuario);
+        await this.emailService.enviarPasswordTemporal(dto.correoReal, alias, tempPassword);
+        const { contrasenia, ...resultado } = guardado;
+        return resultado;
+    }
+    async generarAliasUnico(nombre, apellido) {
+        const base = (0, alias_generator_util_1.buildBaseAlias)(nombre, apellido);
+        let alias = base;
+        let contador = 2;
+        while (await this.usuarioRepository.existsBy({ usuario: alias })) {
+            alias = `${base}${contador}`;
+            contador++;
+        }
+        return alias;
+    }
+    generarPasswordTemporal() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&';
+        let pwd = '';
+        pwd += 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)];
+        pwd += 'abcdefghjkmnpqrstuvwxyz'[Math.floor(Math.random() * 23)];
+        pwd += '23456789'[Math.floor(Math.random() * 8)];
+        pwd += '!@#$%&'[Math.floor(Math.random() * 6)];
+        for (let i = pwd.length; i < 16; i++) {
+            pwd += chars[Math.floor(Math.random() * chars.length)];
+        }
+        return pwd.split('').sort(() => Math.random() - 0.5).join('');
+    }
 };
 exports.UsuariosAuthService = UsuariosAuthService;
 exports.UsuariosAuthService = UsuariosAuthService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(usuario_entity_1.Usuario)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        usuarios_service_1.UsuariosService])
+        usuarios_service_1.UsuariosService,
+        email_service_1.EmailService])
 ], UsuariosAuthService);
 //# sourceMappingURL=usuarios-auth.service.js.map

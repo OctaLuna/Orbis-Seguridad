@@ -4,13 +4,15 @@ import { EntityManager, FindOptionsRelations, FindOptionsSelect, Repository } fr
 import { FindAllEmpresasCardsParamsDto } from '../dto/inputs/find-all-empresas-cards-params.dto';
 import { FindAllEmpresasCardsPaginationResponseDto } from '../dto/outputs/find-all-empresas-cards-pagination-response.dto';
 import { FindAllEmpresasCardsPublicParamsDto } from '../dto/inputs/find-all-empresas-cards-public-params.dto';
+import { InvestigadorEmpresa } from 'src/modules/usuarios/entities/investigador-empresa.entity';
 export declare class EmpresasService {
     private readonly empresaRepository;
-    constructor(empresaRepository: Repository<Empresa>);
+    private readonly investigadorEmpresaRepository;
+    constructor(empresaRepository: Repository<Empresa>, investigadorEmpresaRepository: Repository<InvestigadorEmpresa>);
     create(createEmpresaDto: CreateEmpresaDto): string;
     createTransaction(manager: EntityManager, data: CreateEmpresaDto): Promise<Empresa>;
     findAll(): Promise<Empresa[]>;
-    findAllCardsPrivate(params: FindAllEmpresasCardsParamsDto): Promise<FindAllEmpresasCardsPaginationResponseDto>;
+    findAllCardsPrivate(params: FindAllEmpresasCardsParamsDto, idUsuario?: number): Promise<FindAllEmpresasCardsPaginationResponseDto>;
     findAllCardsPublic(params: FindAllEmpresasCardsPublicParamsDto): Promise<FindAllEmpresasCardsPaginationResponseDto>;
     findOne(idEmpresa: number, selectOptions?: FindOptionsSelect<Empresa>, relationsOptions?: FindOptionsRelations<Empresa>): Promise<Empresa>;
     findOnePublic(idEmpresa: number): Promise<{
@@ -25,5 +27,5 @@ export declare class EmpresasService {
         imagenes: string[];
         hitos: import("../modules/hitos/entities/hito.entity").Hito[];
     }>;
-    findOnePrivate(idEmpresa: number): Promise<Empresa>;
+    findOnePrivate(idEmpresa: number, idUsuario?: number): Promise<Empresa>;
 }

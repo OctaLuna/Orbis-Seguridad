@@ -27,3 +27,15 @@ export const createUsuario = async (payload) => {
   const response = await API.post('/api/auth/register', payload);
   return response.data ?? response;
 };
+
+// M-15: Crear usuario con alias @orbis.com (flujo admin)
+export const crearUsuarioNuevo = async ({ nombre, apellido, correoReal, idRol }) => {
+  const response = await API.post('/api/usuarios', { nombre, apellido, correoReal, idRol });
+  return response.data ?? response;
+};
+
+// M-06: Desbloquear cuenta de usuario
+export const desbloquearCuenta = async (id) => {
+  const response = await API.patch(`/api/usuarios/${id}/desbloquear`);
+  return response.data ?? response;
+};

@@ -1,16 +1,31 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Usuario } from '../entities/usuario.entity';
 import { DataSource, LessThanOrEqual, Repository } from 'typeorm';
 import { OptionsFindOne } from 'src/common/classes';
 import { RolesEnum } from 'src/shared/constants/roles.const';
+import { IsNotEmpty, IsString } from 'class-validator';
+import * as bcrypt from 'bcrypt';
+import { addDays } from 'date-fns';
+import { PasswordValidatorService } from 'src/common/services/password-validator.service';
+import { PasswordHistoryService } from './password-history.service';
+
+export class CambiarPasswordDto {
+    @IsString() @IsNotEmpty()
+    passwordActual: string;
+
+    @IsString() @IsNotEmpty()
+    passwordNuevo: string;
+}
 
 @Injectable()
 export class UsuariosService {
     constructor(
         @InjectRepository(Usuario)
         private readonly usuarioRepository: Repository<Usuario>,
+        private readonly passwordValidator: PasswordValidatorService,
+        private readonly passwordHistoryService: PasswordHistoryService,
     ) { }
     create(createUsuarioDto: CreateUsuarioDto) {
         return 'This action adds a new usuario';
@@ -83,6 +98,58 @@ export class UsuariosService {
         return u;
     }
 
+    async cambiarPassword(idUsuario: number, dto: CambiarPasswordDto): Promise<void> {
+        const usuario = await this.usuarioRepository.findOneBy({ id: idUsuario });
+        if (!usuario) throw new NotFoundException('Usuario no encontrado');
+
+        // Verificar contraseña actual solo si NO es un cambio forzado
+        if (!usuario.mustChangePassword) {
+            const actualValida = await bcrypt.compare(dto.passwordActual, usuario.contrasenia);
+            if (!actualValida) {
+                throw new BadRequestException('La contraseña actual es incorrecta');
+            }
+        }
+
+        this.passwordValidator.validar(dto.passwordNuevo);
+        await this.passwordHistoryService.verificarReutilizacion(idUsuario, dto.passwordNuevo);
+
+        const nuevoHash = await bcrypt.hash(dto.passwordNuevo, 12);
+        await this.passwordHistoryService.guardarEnHistorial(idUsuario, nuevoHash);
+
+        await this.usuarioRepository.update(idUsuario, {
+            contrasenia:        nuevoHash,
+            mustChangePassword: false,
+            passwordChangedAt:  new Date(),
+            passwordExpiresAt:  addDays(new Date(), 60),
+            failedAttempts:     0,
+            resetToken:         undefined,
+            resetTokenExpires:  undefined,
+        });
+    }
+
+    async desbloquearCuenta(id: number): Promise<void> {
+        await this.usuarioRepository.update(id, {
+            isLocked: false,
+            failedAttempts: 0,
+            lockedAt: null as unknown as Date,
+        });
+    }
+
+    async bloquearCuenta(id: number): Promise<void> {
+        await this.usuarioRepository.update(id, {
+            isLocked: true,
+            lockedAt: new Date(),
+        });
+    }
+
+    async incrementarIntentos(id: number, count: number): Promise<void> {
+        await this.usuarioRepository.update(id, { failedAttempts: count });
+    }
+
+    async marcarPasswordExpirado(id: number): Promise<void> {
+        await this.usuarioRepository.update(id, { mustChangePassword: true });
+    }
+
     async findOneByCorreo(correo: string, options?: OptionsFindOne) {
         const finalOptions = new OptionsFindOne();
         if (options) {
@@ -115,5 +182,45 @@ export class UsuariosService {
             return null;
         }
         return u;
+    }
+
+    // --- M-07: Recuperación de contraseña ---
+
+    async findByAnyEmail(email: string): Promise<Usuario | null> {
+        const byReal = await this.usuarioRepository.findOne({ where: { correoReal: email } });
+        if (byReal) return byReal;
+        return this.usuarioRepository.findOne({ where: { correo: email } });
+    }
+
+    async guardarResetToken(id: number, tokenHash: string, expires: Date): Promise<void> {
+        await this.usuarioRepository.update(id, {
+            resetToken: tokenHash,
+            resetTokenExpires: expires,
+        });
+    }
+
+    async findByResetToken(tokenHash: string): Promise<Usuario | null> {
+        return this.usuarioRepository.findOne({ where: { resetToken: tokenHash } });
+    }
+
+    async resetearPassword(id: number, passwordNuevo: string): Promise<void> {
+        const usuario = await this.usuarioRepository.findOneBy({ id });
+        if (!usuario) throw new NotFoundException('Usuario no encontrado');
+
+        this.passwordValidator.validar(passwordNuevo);
+        await this.passwordHistoryService.verificarReutilizacion(id, passwordNuevo);
+
+        const nuevoHash = await bcrypt.hash(passwordNuevo, 12);
+        await this.passwordHistoryService.guardarEnHistorial(id, nuevoHash);
+
+        await this.usuarioRepository.update(id, {
+            contrasenia: nuevoHash,
+            mustChangePassword: false,
+            passwordChangedAt: new Date(),
+            passwordExpiresAt: addDays(new Date(), 60),
+            failedAttempts: 0,
+            resetToken: undefined,
+            resetTokenExpires: undefined,
+        });
     }
 }

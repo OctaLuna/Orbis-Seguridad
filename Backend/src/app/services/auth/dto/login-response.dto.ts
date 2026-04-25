@@ -19,4 +19,10 @@ export class LoginResponseDto extends CommonResponseDto {
         type: Number
     })
     idRol: number
+
+    @ApiProperty({
+        description: 'Indica si el usuario debe cambiar su contraseña antes de operar',
+        type: Boolean
+    })
+    must_change_password: boolean
 }

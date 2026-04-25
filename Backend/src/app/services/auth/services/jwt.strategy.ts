@@ -25,9 +25,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 message: 'Token inválido'
             });
         }
-        const data = { sub: payload.sub, usuario: payload.usuario, rol: payload.rol };
+        const data = { sub: payload.sub, usuario: payload.usuario, rol: payload.rol, must_change_password: payload.must_change_password ?? false };
 
-        const usuario = await this.usuariosService.findByUsuario(data.sub, {
+        const usuario = await this.usuariosService.findOne(data.sub, {
             throwException: false,
         });
 

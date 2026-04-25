@@ -46,6 +46,7 @@ const schedule_1 = require("@nestjs/schedule");
 const email_module_1 = require("./shared/services/email/email.module");
 const app_controller_1 = require("./app.controller");
 const datamart_module_1 = require("./modules/datamart/datamart.module");
+const common_module_1 = require("./common/common.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -53,6 +54,7 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             schedule_1.ScheduleModule.forRoot(),
+            common_module_1.CommonModule,
             email_module_1.EmailModule,
             config_module_1.MyConfigModule,
             database_module_1.DatabaseModule,

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
 import { AuthService } from '../services/auth.service';
 import { RegisterDto } from '../dto/register.dto';
 import { Response } from 'express';
@@ -8,6 +8,7 @@ import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiOkRe
 import { CommonResponseDto } from 'src/shared/dto/common-response.dto';
 import { LoginResponseDto } from '../dto/login-response.dto';
 import { SwaggerBadRequestCommon } from 'src/common/utils/swagger/swagger-response.utils';
+import { ForgotPasswordDto, ResetPasswordDto } from '../dto/reset-password.dto';
 
 @Controller('api/auth')
 export class AuthController {
@@ -26,9 +27,9 @@ export class AuthController {
 		description: 'Respuesta en caso de nombre de usuario ya usado',
 		type: CommonResponseDto
 	})
-	async register(@Body() data: RegisterDto,@Res() res: Response){
+	async register(@Body() data: RegisterDto, @Res() res: Response) {
 		const usuario = await this.authService.register(data);
-		return CreatedRes(res,{
+		return CreatedRes(res, {
 			message: 'El usuario fue registrado'
 		});
 	}
@@ -46,8 +47,37 @@ export class AuthController {
 		type: CommonResponseDto
 	})
 	@ApiBadRequestResponse(SwaggerBadRequestCommon())
-	async login(@Body() data: LoginDto,@Res() res: Response){
+	async login(@Body() data: LoginDto, @Res() res: Response) {
 		const response = await this.authService.login(data);
-		return OkRes(res,response);
+		return OkRes(res, response);
+	}
+
+	// --- M-07: Recuperación de contraseña ---
+
+	@Post('/forgot-password')
+	@ApiOperation({ summary: 'Solicitar restablecimiento de contraseña por correo' })
+	@ApiOkResponse({ description: 'Correo enviado si la cuenta existe', type: CommonResponseDto })
+	async forgotPassword(@Body() dto: ForgotPasswordDto, @Res() res: Response) {
+		await this.authService.solicitarResetPassword(dto.correo);
+		return OkRes(res, {
+			message: 'Si existe una cuenta con ese correo, recibirás un enlace para restablecer tu contraseña.'
+		});
+	}
+
+	@Get('/reset-password/validate/:token')
+	@ApiOperation({ summary: 'Validar si un token de restablecimiento es válido' })
+	@ApiOkResponse({ description: 'Estado de validez del token', type: CommonResponseDto })
+	async validateResetToken(@Param('token') token: string, @Res() res: Response) {
+		const result = await this.authService.validarTokenReset(token);
+		return OkRes(res, result);
+	}
+
+	@Post('/reset-password')
+	@ApiOperation({ summary: 'Confirmar el restablecimiento de contraseña con token' })
+	@ApiOkResponse({ description: 'Contraseña actualizada exitosamente', type: CommonResponseDto })
+	@ApiBadRequestResponse(SwaggerBadRequestCommon())
+	async resetPassword(@Body() dto: ResetPasswordDto, @Res() res: Response) {
+		await this.authService.confirmarResetPassword(dto.token, dto.passwordNuevo);
+		return OkRes(res, { message: 'Contraseña restablecida exitosamente.' });
 	}
 }

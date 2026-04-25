@@ -12,6 +12,7 @@ const empresas_service_1 = require("./services/empresas.service");
 const empresas_controller_1 = require("./api/empresas.controller");
 const typeorm_1 = require("@nestjs/typeorm");
 const empresa_entity_1 = require("./entities/empresa.entity");
+const investigador_empresa_entity_1 = require("../usuarios/entities/investigador-empresa.entity");
 const acciones_module_1 = require("./modules/acciones/acciones.module");
 const empresas_statistics_service_1 = require("./services/empresas-statistics.service");
 let EmpresasModule = class EmpresasModule {
@@ -20,7 +21,7 @@ exports.EmpresasModule = EmpresasModule;
 exports.EmpresasModule = EmpresasModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([empresa_entity_1.Empresa]),
+            typeorm_1.TypeOrmModule.forFeature([empresa_entity_1.Empresa, investigador_empresa_entity_1.InvestigadorEmpresa]),
             acciones_module_1.AccionesModule
         ],
         controllers: [empresas_controller_1.EmpresasController],

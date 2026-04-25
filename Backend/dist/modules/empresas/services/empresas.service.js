@@ -21,10 +21,13 @@ const find_all_empresas_cards_pagination_response_dto_1 = require("../dto/output
 const empresa_public_template_1 = require("../find-templates/empresa-public.template");
 const empresa_not_found_exception_1 = require("../exceptions/empresa-not-found.exception");
 const empresa_private_template_1 = require("../find-templates/empresa-private.template");
+const investigador_empresa_entity_1 = require("../../usuarios/entities/investigador-empresa.entity");
 let EmpresasService = class EmpresasService {
     empresaRepository;
-    constructor(empresaRepository) {
+    investigadorEmpresaRepository;
+    constructor(empresaRepository, investigadorEmpresaRepository) {
         this.empresaRepository = empresaRepository;
+        this.investigadorEmpresaRepository = investigadorEmpresaRepository;
     }
     create(createEmpresaDto) {
         return 'This action adds a new empresa';
@@ -75,7 +78,7 @@ let EmpresasService = class EmpresasService {
         });
         return empresas;
     }
-    async findAllCardsPrivate(params) {
+    async findAllCardsPrivate(params, idUsuario) {
         const query = this.empresaRepository
             .createQueryBuilder('empresa')
             .leftJoinAndSelect('empresa.imagenes', 'imagen')
@@ -86,7 +89,11 @@ let EmpresasService = class EmpresasService {
             .leftJoinAndSelect('rubroEmpresa.rubro', 'rubro')
             .leftJoin('empresa.tiposSocietariosEmpresa', 'tipoEmpSoc')
             .leftJoin('tipoEmpSoc.tipoSocietario', 'tipoSocietario')
-            .leftJoin('empresa.fundadores', 'fundador')
+            .leftJoin('empresa.fundadores', 'fundador');
+        if (idUsuario) {
+            query.innerJoin('investigador_empresa', 'ie', 'ie.id_empresa = empresa.id AND ie.id_usuario = :idUsuario', { idUsuario });
+        }
+        query
             .select([
             'empresa.id',
             'empresa.nombreComercial',
@@ -268,7 +275,12 @@ let EmpresasService = class EmpresasService {
         };
         return empresa;
     }
-    async findOnePrivate(idEmpresa) {
+    async findOnePrivate(idEmpresa, idUsuario) {
+        if (idUsuario) {
+            const asignado = await this.investigadorEmpresaRepository.existsBy({ idUsuario, idEmpresa });
+            if (!asignado)
+                throw new empresa_not_found_exception_1.EmpresaNotFoundException(idEmpresa);
+        }
         const data = await this.findOne(idEmpresa, empresa_private_template_1.EmpresaPrivateTemplateSelect, empresa_private_template_1.EmpresaPrivateTemplateRelations);
         return data;
     }
@@ -277,6 +289,8 @@ exports.EmpresasService = EmpresasService;
 exports.EmpresasService = EmpresasService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(empresa_entity_1.Empresa)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __param(1, (0, typeorm_1.InjectRepository)(investigador_empresa_entity_1.InvestigadorEmpresa)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository])
 ], EmpresasService);
 //# sourceMappingURL=empresas.service.js.map

@@ -40,6 +40,7 @@ export const login = async ({ usuario, contrasenia }) => {
     usuario: decoded.usuario || usuario,
     idRol: decoded.rol ?? decoded.role ?? null,
     exp: decoded.exp ?? null,
+    must_change_password: data.must_change_password ?? decoded.must_change_password ?? false,
   };
 
   setAuthToken(accessToken);
@@ -51,7 +52,7 @@ export const login = async ({ usuario, contrasenia }) => {
   };
 };
 
-export const registerVisitor = async ({ usuario, correo, contrasenia, idRol = 5 }) => {
+export const registerVisitor = async ({ usuario, correo, contrasenia, idRol = 7 }) => {
   const payload = { usuario, correo, contrasenia, idRol };
   const response = await API.post('/api/auth/register', payload);
   return response.data ?? response;
@@ -59,4 +60,31 @@ export const registerVisitor = async ({ usuario, correo, contrasenia, idRol = 5 
 
 export const logout = () => {
   clearAuthToken();
+};
+
+// M-14: Cambio de contraseña del usuario autenticado
+export const cambiarPassword = async (passwordActual, passwordNuevo) => {
+  const response = await API.patch('/api/usuarios/cambiar-password', {
+    passwordActual,
+    passwordNuevo,
+  });
+  return response.data ?? response;
+};
+
+// M-16: Solicitar restablecimiento de contraseña por correo
+export const solicitarResetPassword = async (correo) => {
+  const response = await API.post('/api/auth/forgot-password', { correo });
+  return response.data ?? response;
+};
+
+// M-16: Validar si un token de reset es válido
+export const validarTokenReset = async (token) => {
+  const response = await API.get(`/api/auth/reset-password/validate/${token}`);
+  return response.data ?? response;
+};
+
+// M-16: Confirmar el nuevo password con el token
+export const resetearPassword = async (token, passwordNuevo) => {
+  const response = await API.post('/api/auth/reset-password', { token, passwordNuevo });
+  return response.data ?? response;
 };

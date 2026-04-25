@@ -1,4 +1,4 @@
-import { Controller, Get, Res, Query, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Res, Query, Param, ParseIntPipe, UseGuards, Req } from '@nestjs/common';
 import { EmpresasService } from '../services/empresas.service';
 import { ApiBadRequestResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
@@ -8,6 +8,8 @@ import { FindAllEmpresasCardsPaginationResponseDto } from '../dto/outputs/find-a
 import { FindOneEmpresaPublicDto } from '../dto/outputs/find-one-empresa-public.dto';
 import { FindOneEmpresaPrivateDto } from '../dto/outputs/find-one-empresa-private.dto';
 import { FindAllEmpresasCardsPublicParamsDto } from '../dto/inputs/find-all-empresas-cards-public-params.dto';
+import { AuthRolesGuard } from 'src/app/services/auth/guards/auth-roles.guard';
+import { Rol, ROLES_INVESTIGADORES } from 'src/shared/constants/roles.const';
 
 @ApiTags('Empresas')
 @Controller('api/empresas')
@@ -15,11 +17,11 @@ export class EmpresasController {
 	constructor(private readonly empresasService: EmpresasService) { }
 
 	@Get()
+	@UseGuards(AuthRolesGuard([Rol.ADMIN_EMPRESAS]))
+	@ApiOperation({ summary: 'Api para obtener todas las empresas con detalle completo (solo admins)' })
 	async findAll(@Res() res: Response) {
 		const empresas = await this.empresasService.findAll();
-		return OkRes(res,{
-			empresas: empresas
-		})
+		return OkRes(res, { empresas });
 	}
 
 	@Get('cards/public')
@@ -34,14 +36,13 @@ export class EmpresasController {
 	async findAllCardsPublic(
 		@Query() params: FindAllEmpresasCardsPublicParamsDto,
 		@Res() res: Response
-	){
+	) {
 		const empresas = await this.empresasService.findAllCardsPublic(params);
-		return OkRes(res,{
-			empresas: empresas
-		})
+		return OkRes(res, { empresas });
 	}
 
 	@Get('cards/private')
+	@UseGuards(AuthRolesGuard([Rol.INVESTIGADOR_JUNIOR]))
 	@ApiOperation({
 		summary: 'Api para obtener las empresas para las cards de la pagina web, para usuario con sesion'
 	})
@@ -52,17 +53,19 @@ export class EmpresasController {
 	@ApiBadRequestResponse(SwaggerBadRequestCommon())
 	async findAllCardsPrivate(
 		@Query() params: FindAllEmpresasCardsParamsDto,
+		@Req() req: any,
 		@Res() res: Response
-	){
-		const empresas = await this.empresasService.findAllCardsPrivate(params);
-		return OkRes(res,{
-			empresas: empresas
-		})
+	) {
+		// M-09: filtrar por empresas asignadas si el usuario es investigador
+		const isInvestigador = ROLES_INVESTIGADORES.includes(req.user.rol);
+		const idUsuario = isInvestigador ? (req.user.sub as number) : undefined;
+		const empresas = await this.empresasService.findAllCardsPrivate(params, idUsuario);
+		return OkRes(res, { empresas });
 	}
 
 	@Get('public/:idEmpresa')
 	@ApiOperation({
-		summary: 'Api paara buscar una empresa. para usuaarios sin sesion',
+		summary: 'Api paara buscar una empresa. para usuarios sin sesion',
 	})
 	@ApiOkResponse({
 		description: 'Respuesta en caso de encontrar la empresa',
@@ -70,18 +73,17 @@ export class EmpresasController {
 	})
 	@ApiNotFoundResponse(SwaggerNotFoundCommon())
 	async findOnePublic(
-		@Param('idEmpresa',ParseIntPipe) idEmpresa: number,
+		@Param('idEmpresa', ParseIntPipe) idEmpresa: number,
 		@Res() res: Response,
-	){
+	) {
 		const empresa = await this.empresasService.findOnePublic(idEmpresa);
-		return OkRes(res,{
-			empresa: empresa
-		})
+		return OkRes(res, { empresa });
 	}
 
 	@Get('private/:idEmpresa')
+	@UseGuards(AuthRolesGuard([Rol.INVESTIGADOR_JUNIOR]))
 	@ApiOperation({
-		summary: 'Api paara buscar una empresa. para con sesion',
+		summary: 'Api paara buscar una empresa. para usuarios con sesion',
 	})
 	@ApiOkResponse({
 		description: 'Respuesta en caso de encontrar la empresa',
@@ -89,12 +91,14 @@ export class EmpresasController {
 	})
 	@ApiNotFoundResponse(SwaggerNotFoundCommon())
 	async findOnePrivate(
-		@Param('idEmpresa',ParseIntPipe) idEmpresa: number,
+		@Param('idEmpresa', ParseIntPipe) idEmpresa: number,
+		@Req() req: any,
 		@Res() res: Response,
-	){
-		const empresa = await this.empresasService.findOnePrivate(idEmpresa);
-		return OkRes(res,{
-			empresa: empresa
-		})
+	) {
+		// M-09: restringir acceso si es investigador sin asignación
+		const isInvestigador = ROLES_INVESTIGADORES.includes(req.user.rol);
+		const idUsuario = isInvestigador ? (req.user.sub as number) : undefined;
+		const empresa = await this.empresasService.findOnePrivate(idEmpresa, idUsuario);
+		return OkRes(res, { empresa });
 	}
 }

@@ -18,5 +18,10 @@ export declare class EmailService {
     constructor(mailerService: MailerService);
     private sendEmailAsync;
     sendEmail(options: EmailOptions): Promise<void>;
+    enviarCuentaBloqueada(correo: string, usuario: string): Promise<void>;
+    enviarResetPassword(correo: string, resetUrl: string, expiresInMinutes: number): Promise<void>;
+    enviarPasswordCambiada(correo: string): Promise<void>;
+    enviarPasswordExpirada(correo: string, usuario: string): Promise<void>;
+    enviarPasswordTemporal(correoReal: string, alias: string, pwd: string): Promise<void>;
 }
 export {};

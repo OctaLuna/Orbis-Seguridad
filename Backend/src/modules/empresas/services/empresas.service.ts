@@ -4,19 +4,21 @@ import { UpdateEmpresaDto } from '../dto/inputs/update-empresa.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Empresa } from '../entities/empresa.entity';
 import { EntityManager, FindOptionsRelations, FindOptionsSelect, Repository } from 'typeorm';
-import { DataSource } from 'typeorm/browser';
 import { FindAllEmpresasCardsParamsDto } from '../dto/inputs/find-all-empresas-cards-params.dto';
 import { FindAllEmpresasCardsPaginationResponseDto } from '../dto/outputs/find-all-empresas-cards-pagination-response.dto';
 import { EmpresaPublicTemplateRelations, EmpresaPublicTemplateSelect } from '../find-templates/empresa-public.template';
 import { EmpresaNotFoundException } from '../exceptions/empresa-not-found.exception';
 import { EmpresaPrivateTemplateRelations, EmpresaPrivateTemplateSelect } from '../find-templates/empresa-private.template';
 import { FindAllEmpresasCardsPublicParamsDto } from '../dto/inputs/find-all-empresas-cards-public-params.dto';
+import { InvestigadorEmpresa } from 'src/modules/usuarios/entities/investigador-empresa.entity';
 
 @Injectable()
 export class EmpresasService {
 	constructor(
 		@InjectRepository(Empresa)
-		private readonly empresaRepository: Repository<Empresa>
+		private readonly empresaRepository: Repository<Empresa>,
+		@InjectRepository(InvestigadorEmpresa)
+		private readonly investigadorEmpresaRepository: Repository<InvestigadorEmpresa>,
 	) { }
 	create(createEmpresaDto: CreateEmpresaDto) {
 		return 'This action adds a new empresa';
@@ -78,7 +80,7 @@ export class EmpresasService {
 		return empresas;
 	}
 
-	async findAllCardsPrivate(params: FindAllEmpresasCardsParamsDto) {
+	async findAllCardsPrivate(params: FindAllEmpresasCardsParamsDto, idUsuario?: number) {
 		const query = this.empresaRepository
 			.createQueryBuilder('empresa')
 			.leftJoinAndSelect('empresa.imagenes', 'imagen')
@@ -89,7 +91,19 @@ export class EmpresasService {
 			.leftJoinAndSelect('rubroEmpresa.rubro', 'rubro')
 			.leftJoin('empresa.tiposSocietariosEmpresa', 'tipoEmpSoc')
 			.leftJoin('tipoEmpSoc.tipoSocietario', 'tipoSocietario')
-			.leftJoin('empresa.fundadores', 'fundador')
+			.leftJoin('empresa.fundadores', 'fundador');
+
+		// Row-level security: filtrar por empresas asignadas si es investigador
+		if (idUsuario) {
+			query.innerJoin(
+				'investigador_empresa',
+				'ie',
+				'ie.id_empresa = empresa.id AND ie.id_usuario = :idUsuario',
+				{ idUsuario },
+			);
+		}
+
+		query
 			.select([
 				'empresa.id',
 				'empresa.nombreComercial',
@@ -301,7 +315,11 @@ export class EmpresasService {
 		return empresa;
 	}
 
-	async findOnePrivate(idEmpresa: number) {
+	async findOnePrivate(idEmpresa: number, idUsuario?: number) {
+		if (idUsuario) {
+			const asignado = await this.investigadorEmpresaRepository.existsBy({ idUsuario, idEmpresa });
+			if (!asignado) throw new EmpresaNotFoundException(idEmpresa);
+		}
 		const data = await this.findOne(idEmpresa, EmpresaPrivateTemplateSelect, EmpresaPrivateTemplateRelations);
 		return data;
 	}

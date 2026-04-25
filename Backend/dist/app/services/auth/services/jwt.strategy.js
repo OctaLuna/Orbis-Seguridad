@@ -35,8 +35,8 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
                 message: 'Token inválido'
             });
         }
-        const data = { sub: payload.sub, usuario: payload.usuario, rol: payload.rol };
-        const usuario = await this.usuariosService.findByUsuario(data.sub, {
+        const data = { sub: payload.sub, usuario: payload.usuario, rol: payload.rol, must_change_password: payload.must_change_password ?? false };
+        const usuario = await this.usuariosService.findOne(data.sub, {
             throwException: false,
         });
         if (!usuario) {

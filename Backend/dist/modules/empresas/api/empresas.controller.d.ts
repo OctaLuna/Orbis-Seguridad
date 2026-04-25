@@ -7,7 +7,7 @@ export declare class EmpresasController {
     constructor(empresasService: EmpresasService);
     findAll(res: Response): Promise<Response<any, Record<string, any>>>;
     findAllCardsPublic(params: FindAllEmpresasCardsPublicParamsDto, res: Response): Promise<Response<any, Record<string, any>>>;
-    findAllCardsPrivate(params: FindAllEmpresasCardsParamsDto, res: Response): Promise<Response<any, Record<string, any>>>;
+    findAllCardsPrivate(params: FindAllEmpresasCardsParamsDto, req: any, res: Response): Promise<Response<any, Record<string, any>>>;
     findOnePublic(idEmpresa: number, res: Response): Promise<Response<any, Record<string, any>>>;
-    findOnePrivate(idEmpresa: number, res: Response): Promise<Response<any, Record<string, any>>>;
+    findOnePrivate(idEmpresa: number, req: any, res: Response): Promise<Response<any, Record<string, any>>>;
 }

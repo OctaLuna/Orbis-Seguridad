@@ -14,6 +14,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SolicitudesTemporalesController = void 0;
 const common_1 = require("@nestjs/common");
+const auth_roles_guard_1 = require("../../auth/guards/auth-roles.guard");
+const roles_const_1 = require("../../../../shared/constants/roles.const");
 const solicitudes_temporales_service_1 = require("../services/solicitudes-temporales.service");
 const create_solicitud_temporal_dto_1 = require("../dto/create-solicitud-temporal.dto");
 const swagger_1 = require("@nestjs/swagger");
@@ -79,6 +81,7 @@ __decorate([
 ], SolicitudesTemporalesController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
     (0, swagger_1.ApiOperation)({
         summary: 'Api para listar todas las solicitudes temporales',
     }),
@@ -95,6 +98,7 @@ __decorate([
 ], SolicitudesTemporalesController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
     (0, swagger_1.ApiOperation)({
         summary: 'Obtener una solicitud temporal por ID',
     }),
@@ -112,6 +116,7 @@ __decorate([
 ], SolicitudesTemporalesController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Put)('aprobar/:idSolicitud'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
     (0, swagger_1.ApiOperation)({
         summary: 'Api para aprobar uns solicitud'
     }),
@@ -129,6 +134,7 @@ __decorate([
 ], SolicitudesTemporalesController.prototype, "aprobarSolicitud", null);
 __decorate([
     (0, common_1.Put)('rechazar/:idSolicitud'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
     (0, swagger_1.ApiOperation)({
         summary: 'Api para rechazar solicitud'
     }),

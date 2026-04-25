@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 import { login as loginService, registerVisitor } from "../services/authService";
 import logo from '../assets/logo.png';
@@ -39,6 +40,7 @@ const EyeIconHide = ({ color, size = SIZES.ICON_SIZE }) => (
 );
 
 const InicioSesion = ({ onLogin, onClose }) => {
+  const navigate = useNavigate();
   const [usuario, setUsuario] = useState("");
   const [contrasenia, setContrasenia] = useState("");
   const [correo, setCorreo] = useState("");
@@ -121,13 +123,16 @@ const InicioSesion = ({ onLogin, onClose }) => {
         setCorreo("");
       } else {
         const { user, token, message } = await loginService({ usuario, contrasenia });
-        setMensaje(message || "¡Sesión iniciada correctamente!");
         if (onLogin) {
           onLogin({ user, token });
         }
-        setTimeout(() => {
+        if (user?.must_change_password) {
           setIsVisible(false);
-        }, 1000);
+          navigate('/cambiar-password');
+        } else {
+          setMensaje(message || "¡Sesión iniciada correctamente!");
+          setTimeout(() => setIsVisible(false), 1000);
+        }
       }
     } catch (error) {
       const backendMessage = error?.response?.data?.message;
@@ -369,7 +374,7 @@ const InicioSesion = ({ onLogin, onClose }) => {
               </motion.button>
             </form>
 
-            <div className="mt-4 text-sm text-text-muted font-miles">
+            <div className="mt-4 text-sm text-text-muted font-miles flex flex-col items-center gap-2">
               <button
                 type="button"
                 onClick={() => setModoRegistro((prev) => !prev)}
@@ -379,6 +384,15 @@ const InicioSesion = ({ onLogin, onClose }) => {
                   ? "¿Ya tienes cuenta? Inicia sesión"
                   : "¿Aún no tienes cuenta? Regístrate como visitante"}
               </button>
+              {!modoRegistro && (
+                <button
+                  type="button"
+                  onClick={() => { setIsVisible(false); navigate('/reset-password'); }}
+                  className="text-text-muted hover:text-accent bg-transparent border-none cursor-pointer transition-colors duration-200"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              )}
             </div>
           </motion.div>
         </motion.div>

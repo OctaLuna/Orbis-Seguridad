@@ -3,18 +3,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Usuario } from '../entities/usuario.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
+import { CreateUsuarioNuevoDto } from '../dto/create-usuario-nuevo.dto';
 import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
 import { hashPassword } from 'src/common/utils';
 import { CreateUsuarioTemporalDto } from '../dto/create-usuario-temporal.dto';
 import { RolesEnum } from 'src/shared/constants/roles.const';
 import { UsuariosService } from './usuarios.service';
+import { EmailService } from 'src/shared/services/email/email.service';
+import { buildBaseAlias } from 'src/common/utils/alias-generator.util';
+import { addDays } from 'date-fns';
 
 @Injectable()
 export class UsuariosAuthService {
 	constructor(
 		@InjectRepository(Usuario)
 		private readonly usuarioRepository: Repository<Usuario>,
-		private readonly usuariosService: UsuariosService
+		private readonly usuariosService: UsuariosService,
+		private readonly emailService: EmailService,
 	) { }
 
 	private sanitize(u: Usuario) {
@@ -96,5 +101,56 @@ export class UsuariosAuthService {
 		});
 		await this.usuarioRepository.delete(id);
 		return true;
+	}
+
+	// ─── Nuevo flujo admin: genera alias, contraseña temporal y envía email ─────
+
+	async crearUsuario(dto: CreateUsuarioNuevoDto): Promise<Usuario> {
+		const alias = await this.generarAliasUnico(dto.nombre, dto.apellido);
+		const tempPassword = this.generarPasswordTemporal();
+		const hash = await hashPassword(tempPassword);
+
+		const nuevoUsuario = this.usuarioRepository.create({
+			nombre:            dto.nombre,
+			apellido:          dto.apellido,
+			usuario:           alias,
+			correo:            `${alias}@orbis.com`,
+			correoReal:        dto.correoReal,
+			contrasenia:       hash,
+			idRol:             dto.idRol,
+			mustChangePassword: true,
+			passwordExpiresAt: addDays(new Date(), 60),
+		});
+
+		const guardado = await this.usuarioRepository.save(nuevoUsuario);
+
+		await this.emailService.enviarPasswordTemporal(dto.correoReal, alias, tempPassword);
+
+		const { contrasenia, ...resultado } = guardado as any;
+		return resultado;
+	}
+
+	private async generarAliasUnico(nombre: string, apellido: string): Promise<string> {
+		const base = buildBaseAlias(nombre, apellido);
+		let alias = base;
+		let contador = 2;
+		while (await this.usuarioRepository.existsBy({ usuario: alias })) {
+			alias = `${base}${contador}`;
+			contador++;
+		}
+		return alias;
+	}
+
+	private generarPasswordTemporal(): string {
+		const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&';
+		let pwd = '';
+		pwd += 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)];
+		pwd += 'abcdefghjkmnpqrstuvwxyz'[Math.floor(Math.random() * 23)];
+		pwd += '23456789'[Math.floor(Math.random() * 8)];
+		pwd += '!@#$%&'[Math.floor(Math.random() * 6)];
+		for (let i = pwd.length; i < 16; i++) {
+			pwd += chars[Math.floor(Math.random() * chars.length)];
+		}
+		return pwd.split('').sort(() => Math.random() - 0.5).join('');
 	}
 }

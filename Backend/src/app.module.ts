@@ -37,10 +37,12 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { EmailModule } from './shared/services/email/email.module';
 import { AppController } from './app.controller';
 import { DatamartModule } from './modules/datamart/datamart.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
 	imports: [
 		ScheduleModule.forRoot(),
+		CommonModule,
 		EmailModule,
 		MyConfigModule,
 		DatabaseModule,

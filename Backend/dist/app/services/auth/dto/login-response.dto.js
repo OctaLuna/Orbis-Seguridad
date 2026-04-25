@@ -16,6 +16,7 @@ class LoginResponseDto extends common_response_dto_1.CommonResponseDto {
     access_token;
     idUsuario;
     idRol;
+    must_change_password;
 }
 exports.LoginResponseDto = LoginResponseDto;
 __decorate([
@@ -39,4 +40,11 @@ __decorate([
     }),
     __metadata("design:type", Number)
 ], LoginResponseDto.prototype, "idRol", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Indica si el usuario debe cambiar su contraseña antes de operar',
+        type: Boolean
+    }),
+    __metadata("design:type", Boolean)
+], LoginResponseDto.prototype, "must_change_password", void 0);
 //# sourceMappingURL=login-response.dto.js.map

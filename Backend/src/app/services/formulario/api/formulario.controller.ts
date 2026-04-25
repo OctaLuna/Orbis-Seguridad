@@ -1,4 +1,6 @@
-import { Body, Controller, Post, Res } from "@nestjs/common";
+import { Body, Controller, Post, Res, UseGuards } from "@nestjs/common";
+import { AuthRolesGuard } from "src/app/services/auth/guards/auth-roles.guard";
+import { Rol } from "src/shared/constants/roles.const";
 import { FormularioService } from "../services/formulario.service";
 import { ApiBadRequestResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOperation, ApiTags } from "@nestjs/swagger";
 import { CreatedRes } from "src/common/utils";
@@ -13,6 +15,7 @@ export class FormularioController {
     constructor(private readonly formularioService: FormularioService){}
 
     @Post()
+    @UseGuards(AuthRolesGuard([Rol.ADMIN_EMPRESAS]))
     @ApiOperation({
         summary: 'Api para registrar la empresa mediante el formulario'
     })
