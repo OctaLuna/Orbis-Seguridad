@@ -53,7 +53,9 @@ export class AuthService {
 		const MAX_ATTEMPTS = this.configService.get<number>('MAX_LOGIN_ATTEMPTS', 3);
 		const LOCKOUT_MINUTES = this.configService.get<number>('LOCKOUT_MINUTES', 30);
 
-		const usuario = await this.usuariosService.findByUsuario(data.usuario);
+		// Aceptar alias con o sin dominio: "octavio.luna" y "octavio.luna@orbis.com" son equivalentes
+		const alias = data.usuario.toLowerCase().replace(/@orbis\.com$/i, '').trim();
+		const usuario = await this.usuariosService.findByUsuario(alias);
 		if (!usuario) {
 			throw new UnauthorizedException({ message: 'Credenciales incorrectas' });
 		}

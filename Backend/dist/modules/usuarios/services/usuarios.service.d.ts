@@ -5,7 +5,7 @@ import { OptionsFindOne } from 'src/common/classes';
 import { PasswordValidatorService } from 'src/common/services/password-validator.service';
 import { PasswordHistoryService } from './password-history.service';
 export declare class CambiarPasswordDto {
-    passwordActual: string;
+    passwordActual?: string;
     passwordNuevo: string;
 }
 export declare class UsuariosService {

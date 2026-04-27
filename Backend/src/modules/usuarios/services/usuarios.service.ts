@@ -5,15 +5,15 @@ import { Usuario } from '../entities/usuario.entity';
 import { DataSource, LessThanOrEqual, Repository } from 'typeorm';
 import { OptionsFindOne } from 'src/common/classes';
 import { RolesEnum } from 'src/shared/constants/roles.const';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import * as bcrypt from 'bcrypt';
 import { addDays } from 'date-fns';
 import { PasswordValidatorService } from 'src/common/services/password-validator.service';
 import { PasswordHistoryService } from './password-history.service';
 
 export class CambiarPasswordDto {
-    @IsString() @IsNotEmpty()
-    passwordActual: string;
+    @IsString() @IsOptional()
+    passwordActual?: string;
 
     @IsString() @IsNotEmpty()
     passwordNuevo: string;
@@ -104,6 +104,9 @@ export class UsuariosService {
 
         // Verificar contraseña actual solo si NO es un cambio forzado
         if (!usuario.mustChangePassword) {
+            if (!dto.passwordActual) {
+                throw new BadRequestException('La contraseña actual es requerida');
+            }
             const actualValida = await bcrypt.compare(dto.passwordActual, usuario.contrasenia);
             if (!actualValida) {
                 throw new BadRequestException('La contraseña actual es incorrecta');
@@ -214,13 +217,15 @@ export class UsuariosService {
         await this.passwordHistoryService.guardarEnHistorial(id, nuevoHash);
 
         await this.usuarioRepository.update(id, {
-            contrasenia: nuevoHash,
+            contrasenia:        nuevoHash,
             mustChangePassword: false,
-            passwordChangedAt: new Date(),
-            passwordExpiresAt: addDays(new Date(), 60),
-            failedAttempts: 0,
-            resetToken: undefined,
-            resetTokenExpires: undefined,
+            passwordChangedAt:  new Date(),
+            passwordExpiresAt:  addDays(new Date(), 60),
+            failedAttempts:     0,
+            isLocked:           false,
+            lockedAt:           null as unknown as Date,
+            resetToken:         null as unknown as string,
+            resetTokenExpires:  null as unknown as Date,
         });
     }
 }

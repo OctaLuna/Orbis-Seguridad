@@ -63,7 +63,8 @@ const ForgotPasswordForm = ({ onBack }) => {
   return (
     <form onSubmit={handleSubmit}>
       <p className="font-miles text-text-muted text-sm text-center mb-6">
-        Ingresa el correo asociado a tu cuenta y te enviaremos un enlace para restablecer tu contraseña.
+        Podés ingresar tu correo personal <span className="text-text-main font-semibold">o</span> tu correo institucional{' '}
+        <span className="font-mono text-xs text-text-main">(@orbis.com)</span> — ambos funcionan.
       </p>
       <label className="block text-sm font-bodoni font-medium text-text-main mb-1">
         Correo electrónico
@@ -72,7 +73,7 @@ const ForgotPasswordForm = ({ onBack }) => {
         type="email"
         value={correo}
         onChange={(e) => setCorreo(e.target.value)}
-        placeholder="tu@correo.com"
+        placeholder="tu@gmail.com o alias@orbis.com"
         className={inputClass}
       />
       {error && <p className="text-sm text-red-500 font-miles mt-2">{error}</p>}
@@ -119,7 +120,6 @@ const ResetForm = ({ token, onBack }) => {
     e.preventDefault();
     setError(null);
     if (passwordNuevo !== confirmar) { setError('Las contraseñas no coinciden.'); return; }
-    if (passwordNuevo.length < 8) { setError('La contraseña no cumple los requisitos mínimos.'); return; }
     setLoading(true);
     try {
       await resetearPassword(token, passwordNuevo);

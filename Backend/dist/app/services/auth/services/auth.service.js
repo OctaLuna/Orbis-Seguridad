@@ -62,7 +62,8 @@ let AuthService = class AuthService {
     async login(data) {
         const MAX_ATTEMPTS = this.configService.get('MAX_LOGIN_ATTEMPTS', 3);
         const LOCKOUT_MINUTES = this.configService.get('LOCKOUT_MINUTES', 30);
-        const usuario = await this.usuariosService.findByUsuario(data.usuario);
+        const alias = data.usuario.toLowerCase().replace(/@orbis\.com$/i, '').trim();
+        const usuario = await this.usuariosService.findByUsuario(alias);
         if (!usuario) {
             throw new common_1.UnauthorizedException({ message: 'Credenciales incorrectas' });
         }

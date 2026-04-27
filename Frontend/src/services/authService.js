@@ -63,11 +63,11 @@ export const logout = () => {
 };
 
 // M-14: Cambio de contraseña del usuario autenticado
+// passwordActual es undefined/vacío cuando es cambio forzado (primer login)
 export const cambiarPassword = async (passwordActual, passwordNuevo) => {
-  const response = await API.patch('/api/usuarios/cambiar-password', {
-    passwordActual,
-    passwordNuevo,
-  });
+  const body = { passwordNuevo };
+  if (passwordActual) body.passwordActual = passwordActual;
+  const response = await API.patch('/api/usuarios/cambiar-password', body);
   return response.data ?? response;
 };
 

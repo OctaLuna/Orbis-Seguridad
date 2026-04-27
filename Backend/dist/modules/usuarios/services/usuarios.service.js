@@ -31,7 +31,7 @@ class CambiarPasswordDto {
 exports.CambiarPasswordDto = CambiarPasswordDto;
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CambiarPasswordDto.prototype, "passwordActual", void 0);
 __decorate([
@@ -117,6 +117,9 @@ let UsuariosService = class UsuariosService {
         if (!usuario)
             throw new common_1.NotFoundException('Usuario no encontrado');
         if (!usuario.mustChangePassword) {
+            if (!dto.passwordActual) {
+                throw new common_1.BadRequestException('La contraseña actual es requerida');
+            }
             const actualValida = await bcrypt.compare(dto.passwordActual, usuario.contrasenia);
             if (!actualValida) {
                 throw new common_1.BadRequestException('La contraseña actual es incorrecta');
@@ -215,8 +218,10 @@ let UsuariosService = class UsuariosService {
             passwordChangedAt: new Date(),
             passwordExpiresAt: (0, date_fns_1.addDays)(new Date(), 60),
             failedAttempts: 0,
-            resetToken: undefined,
-            resetTokenExpires: undefined,
+            isLocked: false,
+            lockedAt: null,
+            resetToken: null,
+            resetTokenExpires: null,
         });
     }
 };
