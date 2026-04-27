@@ -38,6 +38,7 @@ export class EmailService {
 				})),
 			});
 		} catch (error) {
+			console.error('[EmailService] Error al enviar correo:', error?.message ?? error);
 		}
 	}
 	async sendEmail(options: EmailOptions): Promise<void> {

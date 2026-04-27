@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { join } from 'path';
 import { EmailService } from './email.service';
 import { MyEmailConfig } from 'src/config/services/email.config';
 
@@ -9,22 +8,22 @@ import { MyEmailConfig } from 'src/config/services/email.config';
 	imports: [
 		MailerModule.forRootAsync({
 			inject: [MyEmailConfig],
-			useFactory: async (emailConfig: MyEmailConfig) => ({
-				transport: {
-					host: 'smtp.gmail.com',
-					port: 587,
-					auth: emailConfig.get()
-				},
-				defaults: {
-					from: '"No Reply" <noreply@ejemplo.com>',
-				},
-				template: {
-					dir: join(__dirname, 'templates'),
-					options: {
-						strict: true,
+			useFactory: async (emailConfig: MyEmailConfig) => {
+				const { user, pass } = emailConfig.get();
+				console.log(`[EmailModule] SMTP user=${user ?? '(no configurado)'}`);
+				return {
+					transport: {
+						host: 'smtp.gmail.com',
+						port: 587,
+						secure: false,
+						auth: { user, pass },
+						tls: { rejectUnauthorized: false },
 					},
-				},
-			})
+					defaults: {
+						from: `"Orbis" <${user ?? 'noreply@orbis.com'}>`,
+					},
+				};
+			}
 
 		}),
 	],

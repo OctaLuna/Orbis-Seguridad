@@ -30,6 +30,10 @@ export const validationSchema = Joi.object({
     JWT_SECRET: Joi.string().required(),
     JWT_TIME_EXPIRE: Joi.string().required(),
 
+    // Email (Gmail SMTP)
+    USER_EMAIL: Joi.string().email().required(),
+    PASS_AUTH:  Joi.string().required(),
+
     // Seguridad de contraseñas
     PASSWORD_EXPIRY_DAYS:        Joi.number().default(60),
     PASSWORD_HISTORY_COUNT:      Joi.number().default(10),
