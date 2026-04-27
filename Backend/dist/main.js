@@ -785,7 +785,7 @@ let AuthService = class AuthService {
     }
     async solicitarResetPassword(correo) {
         const RESET_MINUTES = this.configService.get('RESET_TOKEN_EXPIRES_MINUTES', 30);
-        const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+        const frontendUrl = (this.configService.get('FRONTEND_URL') || 'https://orbis-seguridad.vercel.app').split(',')[0].trim().replace(/\/$/, '');
         const usuario = await this.usuariosService.findByAnyEmail(correo);
         if (!usuario)
             return;
@@ -4257,6 +4257,8 @@ exports.validationSchema = Joi.object({
     ACTIVE_JWT: Joi.boolean().default(true),
     JWT_SECRET: Joi.string().required(),
     JWT_TIME_EXPIRE: Joi.string().required(),
+    USER_EMAIL: Joi.string().email().required(),
+    PASS_AUTH: Joi.string().required(),
     PASSWORD_EXPIRY_DAYS: Joi.number().default(60),
     PASSWORD_HISTORY_COUNT: Joi.number().default(10),
     MAX_LOGIN_ATTEMPTS: Joi.number().default(3),
@@ -17321,7 +17323,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EmailModule = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const mailer_1 = __webpack_require__(/*! @nestjs-modules/mailer */ "@nestjs-modules/mailer");
-const path_1 = __webpack_require__(/*! path */ "path");
 const email_service_1 = __webpack_require__(/*! ./email.service */ "./src/shared/services/email/email.service.ts");
 const email_config_1 = __webpack_require__(/*! src/config/services/email.config */ "./src/config/services/email.config.ts");
 let EmailModule = class EmailModule {
@@ -17332,22 +17333,22 @@ exports.EmailModule = EmailModule = __decorate([
         imports: [
             mailer_1.MailerModule.forRootAsync({
                 inject: [email_config_1.MyEmailConfig],
-                useFactory: async (emailConfig) => ({
-                    transport: {
-                        host: 'smtp.gmail.com',
-                        port: 587,
-                        auth: emailConfig.get()
-                    },
-                    defaults: {
-                        from: '"No Reply" <noreply@ejemplo.com>',
-                    },
-                    template: {
-                        dir: (0, path_1.join)(__dirname, 'templates'),
-                        options: {
-                            strict: true,
+                useFactory: async (emailConfig) => {
+                    const { user, pass } = emailConfig.get();
+                    console.log(`[EmailModule] SMTP user=${user ?? '(no configurado)'}`);
+                    return {
+                        transport: {
+                            host: 'smtp.gmail.com',
+                            port: 587,
+                            secure: false,
+                            auth: { user, pass },
+                            tls: { rejectUnauthorized: false },
                         },
-                    },
-                })
+                        defaults: {
+                            from: `"Orbis" <${user ?? 'noreply@orbis.com'}>`,
+                        },
+                    };
+                }
             }),
         ],
         providers: [email_service_1.EmailService],
@@ -17402,6 +17403,7 @@ let EmailService = class EmailService {
             });
         }
         catch (error) {
+            console.error('[EmailService] Error al enviar correo:', error?.message ?? error);
         }
     }
     async sendEmail(options) {
@@ -17773,16 +17775,6 @@ module.exports = require("joi");
 /***/ ((module) => {
 
 module.exports = require("passport-jwt");
-
-/***/ }),
-
-/***/ "path":
-/*!***********************!*\
-  !*** external "path" ***!
-  \***********************/
-/***/ ((module) => {
-
-module.exports = require("path");
 
 /***/ }),
 
