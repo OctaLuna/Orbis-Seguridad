@@ -13,14 +13,16 @@ async function bootstrap() {
     app.enableShutdownHooks();
 
     const isDev = configService.get('NODE_ENV') !== 'production';
-    const allowedOrigins: string[] = isDev
-        ? []
-        : (configService.get<string>('FRONTEND_URL') ?? '')
-              .split(',')
-              .map((u) => u.trim().replace(/\/$/, ''))
-              .filter(Boolean);
 
-    console.log(`[CORS] mode=${isDev ? 'dev' : 'prod'} allowedOrigins=${JSON.stringify(allowedOrigins)}`);
+    // Orígenes siempre permitidos en producción (hardcoded + env var extra)
+    const HARDCODED_ORIGINS = ['https://orbis-seguridad.vercel.app'];
+    const envOrigins = (configService.get<string>('FRONTEND_URL') ?? '')
+        .split(',')
+        .map((u) => u.trim().replace(/\/$/, ''))
+        .filter(Boolean);
+    const allowedOrigins = [...new Set([...HARDCODED_ORIGINS, ...envOrigins])];
+
+    console.log(`[CORS] mode=${isDev ? 'dev' : 'prod'} allowed=${JSON.stringify(allowedOrigins)}`);
 
     app.enableCors({
         origin: isDev
@@ -30,7 +32,7 @@ async function bootstrap() {
                   if (!origin || allowedOrigins.includes(normalized)) {
                       callback(null, true);
                   } else {
-                      console.warn(`[CORS] Rejected: ${origin}`);
+                      console.warn(`[CORS] Rejected origin: "${origin}"`);
                       callback(new Error(`CORS: origen no permitido → ${origin}`));
                   }
               },
