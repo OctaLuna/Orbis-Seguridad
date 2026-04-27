@@ -49,7 +49,7 @@ function Header({ loggedInUser, onLogout, onLogin, toggleMobileMenu }) {
   const getRoleName = (idRol) => {
     switch (idRol) {
       case 1:
-        return "Superadmin";
+        return "Administrador de Recursos Humanos";
       case 2:
         return "Admin";
       case 3:
@@ -116,7 +116,10 @@ function Header({ loggedInUser, onLogout, onLogin, toggleMobileMenu }) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                {loggedInUser.usuario} ({getRoleName(loggedInUser.idRol)})
+                {loggedInUser.idRol === 1 
+                  ? `${getRoleName(loggedInUser.idRol)}, ¡Bienvenido!`
+                  : `${loggedInUser.usuario} (${getRoleName(loggedInUser.idRol)})`
+                }
               </motion.span>
 
               <motion.button
