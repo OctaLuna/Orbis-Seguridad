@@ -22,6 +22,7 @@ export declare class EmailService {
     enviarResetPassword(correo: string, resetUrl: string, expiresInMinutes: number): Promise<void>;
     enviarPasswordCambiada(correo: string): Promise<void>;
     enviarPasswordExpirada(correo: string, usuario: string): Promise<void>;
+    enviarAccesoFormularioExterno(correoReal: string, alias: string, pwd: string, formularioUrl: string): Promise<void>;
     enviarPasswordTemporal(correoReal: string, alias: string, pwd: string): Promise<void>;
 }
 export {};

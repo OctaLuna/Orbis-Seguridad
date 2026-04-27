@@ -111,6 +111,40 @@ export class EmailService {
 		});
 	}
 
+	async enviarAccesoFormularioExterno(
+		correoReal: string,
+		alias: string,
+		pwd: string,
+		formularioUrl: string,
+	): Promise<void> {
+		await this.sendEmail({
+			to: correoReal,
+			subject: 'Orbis — Tu cuenta y acceso al formulario de empresas',
+			html: `
+				<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+					<h2 style="color: #1a1a2e;">Bienvenido a Orbis</h2>
+					<p>Tu cuenta ha sido creada. Tus credenciales de acceso son:</p>
+					<div style="background: #f4f4f4; padding: 16px; border-radius: 8px; margin: 16px 0;">
+						<p><strong>Usuario:</strong> ${alias}@orbis.com</p>
+						<p><strong>Contraseña temporal:</strong>
+						   <code style="font-size: 16px; color: #e74c3c;">${pwd}</code></p>
+					</div>
+					<p>⚠️ <strong>Esta contraseña es temporal.</strong> Al ingresar, serás redirigido a cambiarla.</p>
+					<hr style="margin: 24px 0; border: none; border-top: 1px solid #eee;" />
+					<h3 style="color: #0f2c4a;">Acceso al formulario de registro de empresas</h3>
+					<p>También tienes acceso al formulario externo de registro de empresas:</p>
+					<div style="text-align: center; margin: 20px 0;">
+						<a href="${formularioUrl}"
+						   style="background: #F29E38; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+							Abrir formulario de empresas
+						</a>
+					</div>
+					<p style="color: #7f8c8d; font-size: 12px;">Este correo es confidencial. No lo compartas con nadie.</p>
+				</div>
+			`,
+		});
+	}
+
 	async enviarPasswordTemporal(correoReal: string, alias: string, pwd: string): Promise<void> {
 		await this.sendEmail({
 			to: correoReal,

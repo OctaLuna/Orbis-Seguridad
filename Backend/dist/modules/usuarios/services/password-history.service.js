@@ -56,6 +56,22 @@ let PasswordHistoryService = class PasswordHistoryService {
         });
         return historial.map((h) => ({ fecha: h.createdAt }));
     }
+    async obtenerHistorialFechas(idUsuario) {
+        const entradas = await this.repo.find({
+            where: { idUsuario },
+            order: { createdAt: 'DESC' },
+            take: 10,
+            select: ['id', 'createdAt'],
+        });
+        return {
+            total_cambios: entradas.length,
+            historial: entradas.map((entrada, index) => ({
+                posicion: index + 1,
+                fecha: entrada.createdAt,
+                es_actual: index === 0,
+            })),
+        };
+    }
 };
 exports.PasswordHistoryService = PasswordHistoryService;
 exports.PasswordHistoryService = PasswordHistoryService = __decorate([

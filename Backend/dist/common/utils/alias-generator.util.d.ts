@@ -1,1 +1,1 @@
-export declare function buildBaseAlias(nombre: string, apellido: string): string;
+export declare function buildBaseAlias(nombre: string, apellidoPaterno: string): string;

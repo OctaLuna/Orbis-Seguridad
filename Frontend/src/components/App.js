@@ -9,7 +9,7 @@ import ContactoPage from '../screens/contactoPage';
 import HistoriaPage from '../screens/historiaPage';
 import EquipoPage from '../screens/equipoPage.js';
 import EditorEmpresasPage from '../screens/editorEmpresasPage';
-import PanelEditorUsuarios from './panelEditorUsuarios_temp';
+import AdministrarUsuarioPanel from './administrarUsuarioPanel';
 import CambiarPasswordPage from '../screens/cambiarPasswordPage.jsx';
 import ResetPasswordPage from '../screens/resetPasswordPage.jsx';
 import FooterBar from './footerBar.js';
@@ -142,7 +142,7 @@ function App() {
               path="/panel-usuarios"
               element={
                 canManageUsers ? (
-                  <PanelEditorUsuarios />
+                  <AdministrarUsuarioPanel loggedInUser={loggedInUser} />
                 ) : (
                   <div className="p-12 text-center text-accent font-bold">
                     No tienes permisos para acceder a esta página.

@@ -1,6 +1,14 @@
+export declare class PermisosAdminDto {
+    panelUsuarios: boolean;
+    editarEmpresas: boolean;
+    formularioExterno: boolean;
+}
 export declare class CreateUsuarioNuevoDto {
     nombre: string;
-    apellido: string;
+    apellidoPaterno: string;
+    apellidoMaterno?: string;
     correoReal: string;
-    idRol: number;
+    tipoRol: 'admin' | 'investigador';
+    permisos?: PermisosAdminDto;
+    rubrosAsignados?: number[];
 }

@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Usuario } from './entities/usuario.entity';
 import { PasswordHistory } from './entities/password-history.entity';
 import { InvestigadorEmpresa } from './entities/investigador-empresa.entity';
+import { InvestigadorRubro } from './entities/investigador-rubro.entity';
 import { UsuariosAuthService } from './services/usuarios-auth.service';
 import { UsuariosTaskService } from './tasks/usuarios-task.service';
 import { EmailModule } from 'src/shared/services/email/email.module';
@@ -12,7 +13,7 @@ import { PasswordHistoryService } from './services/password-history.service';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Usuario, PasswordHistory, InvestigadorEmpresa]),
+        TypeOrmModule.forFeature([Usuario, PasswordHistory, InvestigadorEmpresa, InvestigadorRubro]),
         EmailModule,
     ],
     controllers: [UsuariosController],

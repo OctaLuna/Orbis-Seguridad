@@ -27,6 +27,7 @@ let Usuario = class Usuario {
     isLocked;
     failedAttempts;
     lockedAt;
+    accesoFormularioExterno;
     resetToken;
     resetTokenExpires;
     expiracion;
@@ -91,6 +92,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'locked_at', type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], Usuario.prototype, "lockedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'acceso_formulario_externo', default: false }),
+    __metadata("design:type", Boolean)
+], Usuario.prototype, "accesoFormularioExterno", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'reset_token', nullable: true }),
     __metadata("design:type", String)

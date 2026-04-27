@@ -14,6 +14,7 @@ export declare class Usuario {
     isLocked: boolean;
     failedAttempts: number;
     lockedAt: Date;
+    accesoFormularioExterno: boolean;
     resetToken: string;
     resetTokenExpires: Date;
     expiracion?: Date;

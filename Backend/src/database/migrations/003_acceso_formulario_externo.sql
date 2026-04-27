@@ -1,0 +1,2 @@
+ALTER TABLE usuarios
+  ADD COLUMN IF NOT EXISTS acceso_formulario_externo BOOLEAN NOT NULL DEFAULT FALSE;

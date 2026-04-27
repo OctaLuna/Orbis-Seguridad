@@ -23,12 +23,15 @@ const usuarios_service_1 = require("./usuarios.service");
 const email_service_1 = require("../../../shared/services/email/email.service");
 const alias_generator_util_1 = require("../../../common/utils/alias-generator.util");
 const date_fns_1 = require("date-fns");
+const investigador_rubro_entity_1 = require("../entities/investigador-rubro.entity");
 let UsuariosAuthService = class UsuariosAuthService {
     usuarioRepository;
+    investigadorRubroRepository;
     usuariosService;
     emailService;
-    constructor(usuarioRepository, usuariosService, emailService) {
+    constructor(usuarioRepository, investigadorRubroRepository, usuariosService, emailService) {
         this.usuarioRepository = usuarioRepository;
+        this.investigadorRubroRepository = investigadorRubroRepository;
         this.usuariosService = usuariosService;
         this.emailService = emailService;
     }
@@ -59,17 +62,11 @@ let UsuariosAuthService = class UsuariosAuthService {
         return usuarioSaved;
     }
     async update(id, data) {
-        const entity = await this.usuariosService.findOne(id, {
-            throwException: true,
-        });
+        const entity = await this.usuariosService.findOne(id, { throwException: true });
         if (data.usuario && data.usuario !== entity.usuario) {
-            const repeated = await this.usuariosService.findByUsuario(data.usuario, {
-                throwException: false,
-            });
+            const repeated = await this.usuariosService.findByUsuario(data.usuario, { throwException: false });
             if (repeated && repeated.id !== id) {
-                throw new common_1.ConflictException({
-                    message: 'El nombre de usuario ya está en uso.',
-                });
+                throw new common_1.ConflictException({ message: 'El nombre de usuario ya está en uso.' });
             }
             entity.usuario = data.usuario;
         }
@@ -77,13 +74,9 @@ let UsuariosAuthService = class UsuariosAuthService {
             entity.contrasenia = await (0, utils_1.hashPassword)(data.contrasenia);
         }
         if (data.correo && data.correo !== entity.correo) {
-            const repeatedEmail = await this.usuariosService.findOneByCorreo(data.correo, {
-                throwException: false,
-            });
+            const repeatedEmail = await this.usuariosService.findOneByCorreo(data.correo, { throwException: false });
             if (repeatedEmail && repeatedEmail.id !== id) {
-                throw new common_1.ConflictException({
-                    message: 'El correo ya está en uso.',
-                });
+                throw new common_1.ConflictException({ message: 'El correo ya está en uso.' });
             }
             entity.correo = data.correo;
         }
@@ -94,34 +87,71 @@ let UsuariosAuthService = class UsuariosAuthService {
         return this.sanitize(updated);
     }
     async remove(id) {
-        const exists = await this.usuariosService.findOne(id, {
-            throwException: true
-        });
+        await this.usuariosService.findOne(id, { throwException: true });
         await this.usuarioRepository.delete(id);
         return true;
     }
-    async crearUsuario(dto) {
-        const alias = await this.generarAliasUnico(dto.nombre, dto.apellido);
+    async crearUsuario(dto, creadorIdRol) {
+        const alias = await this.generarAliasUnico(dto.nombre, dto.apellidoPaterno);
         const tempPassword = this.generarPasswordTemporal();
         const hash = await (0, utils_1.hashPassword)(tempPassword);
+        let idRol;
+        if (dto.tipoRol === 'admin') {
+            idRol = this.calcularRolAdmin(dto.permisos?.panelUsuarios ?? false, dto.permisos?.editarEmpresas ?? false, dto.permisos?.formularioExterno ?? false, creadorIdRol === 1);
+        }
+        else {
+            const esJunior = dto.rubrosAsignados && dto.rubrosAsignados.length > 0;
+            idRol = esJunior ? 5 : 4;
+        }
+        const apellido = dto.apellidoMaterno
+            ? `${dto.apellidoPaterno} ${dto.apellidoMaterno}`
+            : dto.apellidoPaterno;
         const nuevoUsuario = this.usuarioRepository.create({
             nombre: dto.nombre,
-            apellido: dto.apellido,
+            apellido: apellido,
             usuario: alias,
             correo: `${alias}@orbis.com`,
             correoReal: dto.correoReal,
             contrasenia: hash,
-            idRol: dto.idRol,
+            idRol: idRol,
             mustChangePassword: true,
             passwordExpiresAt: (0, date_fns_1.addDays)(new Date(), 60),
+            accesoFormularioExterno: dto.permisos?.formularioExterno ?? false,
         });
         const guardado = await this.usuarioRepository.save(nuevoUsuario);
-        await this.emailService.enviarPasswordTemporal(dto.correoReal, alias, tempPassword);
+        if (idRol === 5 && dto.rubrosAsignados && dto.rubrosAsignados.length > 0) {
+            const asignaciones = dto.rubrosAsignados.map((idRubro) => ({
+                idUsuario: guardado.id,
+                idRubro,
+            }));
+            await this.investigadorRubroRepository.save(asignaciones);
+        }
+        if (dto.permisos?.formularioExterno) {
+            await this.emailService.enviarAccesoFormularioExterno(dto.correoReal, alias, tempPassword, 'https://orbis-empresarial.vercel.app/');
+        }
+        else {
+            await this.emailService.enviarPasswordTemporal(dto.correoReal, alias, tempPassword);
+        }
         const { contrasenia, ...resultado } = guardado;
         return resultado;
     }
-    async generarAliasUnico(nombre, apellido) {
-        const base = (0, alias_generator_util_1.buildBaseAlias)(nombre, apellido);
+    calcularRolAdmin(permisoUsuarios, permisoEmpresas, permisoFormularioExterno, creadorEsSuperadmin) {
+        if (permisoUsuarios && permisoEmpresas) {
+            if (!creadorEsSuperadmin) {
+                throw new common_1.ForbiddenException('Solo un SUPERADMIN puede crear usuarios con acceso total al sistema');
+            }
+            return 1;
+        }
+        if (permisoUsuarios)
+            return 2;
+        if (permisoEmpresas)
+            return 3;
+        if (permisoFormularioExterno)
+            return 3;
+        throw new common_1.BadRequestException('Un administrador debe tener al menos un acceso asignado');
+    }
+    async generarAliasUnico(nombre, apellidoPaterno) {
+        const base = (0, alias_generator_util_1.buildBaseAlias)(nombre, apellidoPaterno);
         let alias = base;
         let contador = 2;
         while (await this.usuarioRepository.existsBy({ usuario: alias })) {
@@ -147,7 +177,9 @@ exports.UsuariosAuthService = UsuariosAuthService;
 exports.UsuariosAuthService = UsuariosAuthService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(usuario_entity_1.Usuario)),
+    __param(1, (0, typeorm_1.InjectRepository)(investigador_rubro_entity_1.InvestigadorRubro)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
         usuarios_service_1.UsuariosService,
         email_service_1.EmailService])
 ], UsuariosAuthService);

@@ -8,4 +8,12 @@ export declare class PasswordHistoryService {
     obtenerRegistroFechas(idUsuario: number): Promise<{
         fecha: Date;
     }[]>;
+    obtenerHistorialFechas(idUsuario: number): Promise<{
+        total_cambios: number;
+        historial: {
+            posicion: number;
+            fecha: Date;
+            es_actual: boolean;
+        }[];
+    }>;
 }

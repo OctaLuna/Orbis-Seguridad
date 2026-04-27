@@ -18,6 +18,7 @@ import { Response } from 'express';
 import { CreatedRes, OkRes, SwaggerBadRequestCommon, SwaggerConflictCommon, SwaggerNotFoundCommon } from 'src/common/utils';
 import { UsuariosService, CambiarPasswordDto } from '../services/usuarios.service';
 import { UsuariosAuthService } from '../services/usuarios-auth.service';
+import { PasswordHistoryService } from '../services/password-history.service';
 import { UpdateUsuarioDto } from '../dto/update-usuario.dto';
 import { CreateUsuarioNuevoDto } from '../dto/create-usuario-nuevo.dto';
 import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
@@ -29,6 +30,7 @@ export class UsuariosController {
 	constructor(
 		private readonly usuariosService: UsuariosService,
 		private readonly usuariosAuthService: UsuariosAuthService,
+		private readonly passwordHistoryService: PasswordHistoryService,
 	) { }
 
 	@Get()
@@ -45,8 +47,8 @@ export class UsuariosController {
 	@ApiOperation({ summary: 'Api para crear un usuario con alias @orbis.com (solo admins)' })
 	@ApiCreatedResponse({ description: 'Usuario creado y credenciales enviadas por correo', type: CommonResponseDto })
 	@ApiBadRequestResponse(SwaggerBadRequestCommon())
-	async crearUsuario(@Body() dto: CreateUsuarioNuevoDto, @Res() res: Response) {
-		const usuario = await this.usuariosAuthService.crearUsuario(dto);
+	async crearUsuario(@Body() dto: CreateUsuarioNuevoDto, @Req() req: any, @Res() res: Response) {
+		await this.usuariosAuthService.crearUsuario(dto, req.user.rol);
 		return CreatedRes(res, { message: 'Usuario creado exitosamente. Las credenciales fueron enviadas por correo.' });
 	}
 
@@ -104,5 +106,24 @@ export class UsuariosController {
 	) {
 		await this.usuariosAuthService.remove(id);
 		return OkRes(res, { message: 'Usuario eliminado' });
+	}
+
+	@Get(':id/historial-passwords')
+	@UseGuards(AuthRolesGuard([Rol.ADMIN_RRHH]))
+	@ApiOperation({ summary: 'Obtener historial de fechas de cambio de contraseña (sin hashes)' })
+	@ApiOkResponse({ description: 'Historial de fechas obtenido', type: CommonResponseDto })
+	@ApiNotFoundResponse(SwaggerNotFoundCommon())
+	@ApiParam({ name: 'id', description: 'Id del usuario' })
+	async obtenerHistorialPasswords(
+		@Param('id', ParseIntPipe) id: number,
+		@Res() res: Response,
+	) {
+		const usuario = await this.usuariosService.findOne(id, { throwException: true });
+		const historial = await this.passwordHistoryService.obtenerHistorialFechas(id);
+		return OkRes(res, {
+			id_usuario: usuario!.id,
+			usuario: usuario!.usuario,
+			...historial,
+		});
 	}
 }

@@ -19,6 +19,7 @@ const roles_const_1 = require("../../../shared/constants/roles.const");
 const utils_1 = require("../../../common/utils");
 const usuarios_service_1 = require("../services/usuarios.service");
 const usuarios_auth_service_1 = require("../services/usuarios-auth.service");
+const password_history_service_1 = require("../services/password-history.service");
 const update_usuario_dto_1 = require("../dto/update-usuario.dto");
 const create_usuario_nuevo_dto_1 = require("../dto/create-usuario-nuevo.dto");
 const swagger_1 = require("@nestjs/swagger");
@@ -27,16 +28,18 @@ const common_response_dto_1 = require("../../../shared/dto/common-response.dto")
 let UsuariosController = class UsuariosController {
     usuariosService;
     usuariosAuthService;
-    constructor(usuariosService, usuariosAuthService) {
+    passwordHistoryService;
+    constructor(usuariosService, usuariosAuthService, passwordHistoryService) {
         this.usuariosService = usuariosService;
         this.usuariosAuthService = usuariosAuthService;
+        this.passwordHistoryService = passwordHistoryService;
     }
     async findAll(res) {
         const usuarios = await this.usuariosService.findAll();
         return (0, utils_1.OkRes)(res, { usuarios });
     }
-    async crearUsuario(dto, res) {
-        const usuario = await this.usuariosAuthService.crearUsuario(dto);
+    async crearUsuario(dto, req, res) {
+        await this.usuariosAuthService.crearUsuario(dto, req.user.rol);
         return (0, utils_1.CreatedRes)(res, { message: 'Usuario creado exitosamente. Las credenciales fueron enviadas por correo.' });
     }
     async cambiarPassword(dto, req, res) {
@@ -54,6 +57,15 @@ let UsuariosController = class UsuariosController {
     async deleteUsuario(id, res) {
         await this.usuariosAuthService.remove(id);
         return (0, utils_1.OkRes)(res, { message: 'Usuario eliminado' });
+    }
+    async obtenerHistorialPasswords(id, res) {
+        const usuario = await this.usuariosService.findOne(id, { throwException: true });
+        const historial = await this.passwordHistoryService.obtenerHistorialFechas(id);
+        return (0, utils_1.OkRes)(res, {
+            id_usuario: usuario.id,
+            usuario: usuario.usuario,
+            ...historial,
+        });
     }
 };
 exports.UsuariosController = UsuariosController;
@@ -74,9 +86,10 @@ __decorate([
     (0, swagger_1.ApiCreatedResponse)({ description: 'Usuario creado y credenciales enviadas por correo', type: common_response_dto_1.CommonResponseDto }),
     (0, swagger_1.ApiBadRequestResponse)((0, utils_1.SwaggerBadRequestCommon)()),
     __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Res)()),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_usuario_nuevo_dto_1.CreateUsuarioNuevoDto, Object]),
+    __metadata("design:paramtypes", [create_usuario_nuevo_dto_1.CreateUsuarioNuevoDto, Object, Object]),
     __metadata("design:returntype", Promise)
 ], UsuariosController.prototype, "crearUsuario", null);
 __decorate([
@@ -135,9 +148,23 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], UsuariosController.prototype, "deleteUsuario", null);
+__decorate([
+    (0, common_1.Get)(':id/historial-passwords'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener historial de fechas de cambio de contraseña (sin hashes)' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Historial de fechas obtenido', type: common_response_dto_1.CommonResponseDto }),
+    (0, swagger_1.ApiNotFoundResponse)((0, utils_1.SwaggerNotFoundCommon)()),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Id del usuario' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], UsuariosController.prototype, "obtenerHistorialPasswords", null);
 exports.UsuariosController = UsuariosController = __decorate([
     (0, common_1.Controller)('api/usuarios'),
     __metadata("design:paramtypes", [usuarios_service_1.UsuariosService,
-        usuarios_auth_service_1.UsuariosAuthService])
+        usuarios_auth_service_1.UsuariosAuthService,
+        password_history_service_1.PasswordHistoryService])
 ], UsuariosController);
 //# sourceMappingURL=usuarios.controller.js.map

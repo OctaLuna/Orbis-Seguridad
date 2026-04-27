@@ -14,6 +14,7 @@ const typeorm_1 = require("@nestjs/typeorm");
 const usuario_entity_1 = require("./entities/usuario.entity");
 const password_history_entity_1 = require("./entities/password-history.entity");
 const investigador_empresa_entity_1 = require("./entities/investigador-empresa.entity");
+const investigador_rubro_entity_1 = require("./entities/investigador-rubro.entity");
 const usuarios_auth_service_1 = require("./services/usuarios-auth.service");
 const usuarios_task_service_1 = require("./tasks/usuarios-task.service");
 const email_module_1 = require("../../shared/services/email/email.module");
@@ -24,7 +25,7 @@ exports.UsuariosModule = UsuariosModule;
 exports.UsuariosModule = UsuariosModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([usuario_entity_1.Usuario, password_history_entity_1.PasswordHistory, investigador_empresa_entity_1.InvestigadorEmpresa]),
+            typeorm_1.TypeOrmModule.forFeature([usuario_entity_1.Usuario, password_history_entity_1.PasswordHistory, investigador_empresa_entity_1.InvestigadorEmpresa, investigador_rubro_entity_1.InvestigadorRubro]),
             email_module_1.EmailModule,
         ],
         controllers: [usuarios_controller_1.UsuariosController],
