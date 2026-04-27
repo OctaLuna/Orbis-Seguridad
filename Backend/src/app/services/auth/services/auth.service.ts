@@ -132,7 +132,7 @@ export class AuthService {
 
 	async solicitarResetPassword(correo: string): Promise<void> {
 		const RESET_MINUTES = this.configService.get<number>('RESET_TOKEN_EXPIRES_MINUTES', 30);
-		const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+		const frontendUrl = (this.configService.get<string>('FRONTEND_URL') || 'https://orbis-seguridad.vercel.app').split(',')[0].trim().replace(/\/$/, '');
 
 		const usuario = await this.usuariosService.findByAnyEmail(correo);
 		if (!usuario) return; // respuesta silenciosa para no revelar existencia de cuenta
