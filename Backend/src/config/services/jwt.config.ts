@@ -8,7 +8,7 @@ export class MyJwtConfig {
         return {
             isActive: this.config.get<boolean>('ACTIVE_JWT'),
             secret: this.config.get<string>('JWT_SECRET'),
-            expiresIn: this.config.get<string>('JWT_TIME_EXPIRE'),
+            expiresIn: this.config.get<string>('JWT_TIME_EXPIRE') as any,
         };
     }
 }

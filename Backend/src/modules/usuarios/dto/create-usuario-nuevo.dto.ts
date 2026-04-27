@@ -1,30 +1,55 @@
-import { IsString, IsEmail, IsInt, IsNotEmpty, Min, Max } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+    IsString, IsEmail, IsNotEmpty, IsOptional,
+    IsIn, IsArray, IsInt, IsBoolean, ValidateIf, ValidateNested,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+
+export class PermisosAdminDto {
+    @IsBoolean()
+    panelUsuarios: boolean;
+
+    @IsBoolean()
+    editarEmpresas: boolean;
+
+    @IsBoolean()
+    formularioExterno: boolean;
+}
 
 export class CreateUsuarioNuevoDto {
-    @ApiProperty({ example: 'Juan Carlos' })
+    @ApiProperty({ example: 'Octavio' })
     @IsString()
     @IsNotEmpty()
     nombre: string;
 
-    @ApiProperty({ example: 'Pérez López' })
+    @ApiProperty({ example: 'Luna' })
     @IsString()
     @IsNotEmpty()
-    apellido: string;
+    apellidoPaterno: string;
 
-    @ApiProperty({
-        example: 'juan.perez@gmail.com',
-        description: 'Correo real del usuario. Aquí se enviará la contraseña temporal.',
-    })
+    @ApiPropertyOptional({ example: 'García' })
+    @IsString()
+    @IsOptional()
+    apellidoMaterno?: string;
+
+    @ApiProperty({ example: 'octavio.personal@gmail.com' })
     @IsEmail()
     correoReal: string;
 
-    @ApiProperty({
-        example: 4,
-        description: '1=SUPERADMIN, 2=ADMIN_RRHH, 3=ADMIN_EMPRESAS, 4=INV_SENIOR, 5=INV_JUNIOR, 6=TEMPORAL, 7=VISITANTE',
-    })
-    @IsInt()
-    @Min(1)
-    @Max(7)
-    idRol: number;
+    @ApiProperty({ enum: ['admin', 'investigador'] })
+    @IsIn(['admin', 'investigador'])
+    tipoRol: 'admin' | 'investigador';
+
+    @ValidateIf((o) => o.tipoRol === 'admin')
+    @ValidateNested()
+    @Type(() => PermisosAdminDto)
+    @ApiPropertyOptional({ type: PermisosAdminDto })
+    permisos?: PermisosAdminDto;
+
+    @ValidateIf((o) => o.tipoRol === 'investigador')
+    @IsArray()
+    @IsInt({ each: true })
+    @IsOptional()
+    @ApiPropertyOptional({ type: [Number] })
+    rubrosAsignados?: number[];
 }

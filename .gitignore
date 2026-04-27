@@ -61,3 +61,4 @@ create.exp
 node_modules/
 node_modules/.cache/
 
+.claude/

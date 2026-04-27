@@ -53,7 +53,9 @@ export class AuthService {
 		const MAX_ATTEMPTS = this.configService.get<number>('MAX_LOGIN_ATTEMPTS', 3);
 		const LOCKOUT_MINUTES = this.configService.get<number>('LOCKOUT_MINUTES', 30);
 
-		const usuario = await this.usuariosService.findByUsuario(data.usuario);
+		// Aceptar alias con o sin dominio: "octavio.luna" y "octavio.luna@orbis.com" son equivalentes
+		const alias = data.usuario.toLowerCase().replace(/@orbis\.com$/i, '').trim();
+		const usuario = await this.usuariosService.findByUsuario(alias);
 		if (!usuario) {
 			throw new UnauthorizedException({ message: 'Credenciales incorrectas' });
 		}
@@ -130,7 +132,7 @@ export class AuthService {
 
 	async solicitarResetPassword(correo: string): Promise<void> {
 		const RESET_MINUTES = this.configService.get<number>('RESET_TOKEN_EXPIRES_MINUTES', 30);
-		const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+		const frontendUrl = (this.configService.get<string>('FRONTEND_URL') || 'https://orbis-seguridad.vercel.app').split(',')[0].trim().replace(/\/$/, '');
 
 		const usuario = await this.usuariosService.findByAnyEmail(correo);
 		if (!usuario) return; // respuesta silenciosa para no revelar existencia de cuenta

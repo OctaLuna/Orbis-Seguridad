@@ -21,7 +21,7 @@ const Navbar = ({ loggedInUser, isMobileMenuOpen, toggleMobileMenu }) => {
   let finalLinks = [...baseLinks];
   if (loggedInUser && ROLES_CON_PANEL.has(loggedInUser.idRol)) {
     finalLinks.push({ label: "ADMIN USUARIOS", path: "/panel-usuarios" });
-    finalLinks.push({ label: "DASHBOARDS", path: "/dashboards" });
+    //finalLinks.push({ label: "DASHBOARDS", path: "/dashboards" });
   }
 
   const menuVariants = {

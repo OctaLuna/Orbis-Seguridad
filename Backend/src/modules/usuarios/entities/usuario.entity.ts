@@ -52,6 +52,11 @@ export class Usuario {
     @Column({ name: 'locked_at', type: 'timestamp', nullable: true })
     lockedAt: Date;
 
+    // --- Acceso a formulario externo ---
+
+    @Column({ name: 'acceso_formulario_externo', default: false })
+    accesoFormularioExterno: boolean;
+
     // --- Reset de contraseña ---
 
     @Column({ name: 'reset_token', nullable: true })

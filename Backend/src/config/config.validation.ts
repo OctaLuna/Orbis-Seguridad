@@ -10,7 +10,7 @@ export const validationSchema = Joi.object({
     PORT: Joi.number().default(3000),
     SHOW_ENV: Joi.boolean().default(false),
     PRINT_LOGS: Joi.boolean().default(false),
-    FRONTEND_URL: Joi.string().required(), // Añadimos esta para la configuración de CORS
+    FRONTEND_URL: Joi.string().default(''), // Orígenes extra separados por coma; la URL de Vercel va en el código
 
     // --- Lógica de Base de Datos Corregida ---
     // Para producción (ej. Render con Supabase)
@@ -29,6 +29,10 @@ export const validationSchema = Joi.object({
     ACTIVE_JWT: Joi.boolean().default(true),
     JWT_SECRET: Joi.string().required(),
     JWT_TIME_EXPIRE: Joi.string().required(),
+
+    // Email (Gmail SMTP)
+    USER_EMAIL: Joi.string().email().required(),
+    PASS_AUTH:  Joi.string().required(),
 
     // Seguridad de contraseñas
     PASSWORD_EXPIRY_DAYS:        Joi.number().default(60),

@@ -50,7 +50,7 @@ const CambiarPasswordPage = ({ authState, onAuthUpdate }) => {
   const [confirmar, setConfirmar] = useState('');
   const [show, setShow] = useState({ actual: false, nuevo: false, confirmar: false });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [errores, setErrores] = useState([]);
   const [exito, setExito] = useState(false);
 
   useEffect(() => {
@@ -61,14 +61,10 @@ const CambiarPasswordPage = ({ authState, onAuthUpdate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setErrores([]);
 
     if (passwordNuevo !== confirmar) {
-      setError('Las contraseñas nuevas no coinciden.');
-      return;
-    }
-    if (passwordNuevo.length < 8) {
-      setError('La contraseña nueva no cumple los requisitos mínimos.');
+      setErrores(['Las contraseñas nuevas no coinciden.']);
       return;
     }
 
@@ -85,8 +81,16 @@ const CambiarPasswordPage = ({ authState, onAuthUpdate }) => {
       }
       setTimeout(() => navigate('/'), 1800);
     } catch (err) {
-      const msg = err?.response?.data?.message;
-      setError(Array.isArray(msg) ? msg.join(', ') : msg || 'Error al cambiar la contraseña.');
+      const data = err?.response?.data;
+      if (data?.tipo === 'diccionario') {
+        setErrores(['Tu contraseña es demasiado predecible:', ...(data.errores || ['Intenta con una combinación más creativa'])]);
+      } else if (data?.tipo === 'requisitos') {
+        setErrores(data.errores || ['La contraseña no cumple los requisitos']);
+      } else if (data?.message?.includes('reutilizar')) {
+        setErrores(['No puedes usar una contraseña que ya utilizaste antes']);
+      } else {
+        setErrores([data?.message || 'Error al cambiar la contraseña.']);
+      }
     } finally {
       setLoading(false);
     }
@@ -139,6 +143,11 @@ const CambiarPasswordPage = ({ authState, onAuthUpdate }) => {
               />
             )}
 
+            <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs font-miles text-amber-800 leading-relaxed">
+              La contraseña debe tener al menos 12 caracteres, mayúsculas, minúsculas, números y un
+              carácter especial. Además no puede ser una palabra común o una variación predecible.
+            </div>
+
             <PasswordField
               id="nuevo"
               label="Nueva contraseña"
@@ -165,14 +174,18 @@ const CambiarPasswordPage = ({ authState, onAuthUpdate }) => {
               <p className="text-xs text-red-500 font-miles -mt-2 mb-2">Las contraseñas no coinciden.</p>
             )}
 
-            {error && (
-              <motion.p
+            {errores.length > 0 && (
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-sm text-red-500 font-miles text-center mb-3"
+                className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
               >
-                {error}
-              </motion.p>
+                {errores.map((e, i) => (
+                  <p key={i} className={`font-miles text-red-600 ${i === 0 ? 'font-semibold text-sm' : 'text-xs mt-1'}`}>
+                    {i > 0 && errores.length > 1 ? `• ${e}` : e}
+                  </p>
+                ))}
+              </motion.div>
             )}
 
             <motion.button

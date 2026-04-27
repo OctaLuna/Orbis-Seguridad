@@ -721,7 +721,8 @@ let AuthService = class AuthService {
     async login(data) {
         const MAX_ATTEMPTS = this.configService.get('MAX_LOGIN_ATTEMPTS', 3);
         const LOCKOUT_MINUTES = this.configService.get('LOCKOUT_MINUTES', 30);
-        const usuario = await this.usuariosService.findByUsuario(data.usuario);
+        const alias = data.usuario.toLowerCase().replace(/@orbis\.com$/i, '').trim();
+        const usuario = await this.usuariosService.findByUsuario(alias);
         if (!usuario) {
             throw new common_1.UnauthorizedException({ message: 'Credenciales incorrectas' });
         }
@@ -784,7 +785,7 @@ let AuthService = class AuthService {
     }
     async solicitarResetPassword(correo) {
         const RESET_MINUTES = this.configService.get('RESET_TOKEN_EXPIRES_MINUTES', 30);
-        const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+        const frontendUrl = (this.configService.get('FRONTEND_URL') || 'https://orbis-seguridad.vercel.app').split(',')[0].trim().replace(/\/$/, '');
         const usuario = await this.usuariosService.findByAnyEmail(correo);
         if (!usuario)
             return;
@@ -3893,21 +3894,52 @@ let PasswordValidatorService = class PasswordValidatorService {
             cumplida: (p) => /[^A-Za-z0-9]/.test(p),
         },
     ];
+    traducciones = {
+        'Use a few words, avoid common phrases': 'Usa palabras poco comunes',
+        'No need for symbols, digits, or uppercase letters': 'Agrega variedad a tu contraseña',
+        'Add another word or two. Uncommon words are better.': 'Agrega más palabras. Las poco comunes son mejores.',
+        'Straight rows of keys are easy to guess': 'Las secuencias de teclado son fáciles de adivinar',
+        'Short keyboard patterns are easy to guess': 'Los patrones cortos de teclado son fáciles de adivinar',
+        'Use a longer keyboard pattern with more turns': 'Usa un patrón más largo con más variedad',
+        'Repeats like "aaa" are easy to guess': 'Las repeticiones como "aaa" son fáciles de adivinar',
+        'Repeats like "abcabc" are only slightly harder to guess than "abc"': 'Evita repetir secuencias',
+        'Sequences like abc or 6543 are easy to guess': 'Las secuencias como abc o 6543 son fáciles',
+        'Recent years are easy to guess': 'Los años recientes son fáciles de adivinar',
+        'Dates are often easy to guess': 'Las fechas son fáciles de adivinar',
+        'This is a top-10 common password': 'Esta es una de las 10 contraseñas más comunes',
+        'This is a top-100 common password': 'Esta es una de las 100 contraseñas más comunes',
+        'This is a very common password': 'Esta es una contraseña muy común',
+        'This is similar to a commonly used password': 'Es similar a una contraseña muy usada',
+        'A word by itself is easy to guess': 'Una sola palabra es fácil de adivinar',
+        'Names and surnames by themselves are easy to guess': 'Los nombres solos son fáciles de adivinar',
+        'Common names and surnames are easy to guess': 'Los nombres comunes son fáciles de adivinar',
+    };
     validar(password) {
-        const fallidas = this.reglas
+        const reglasFallidas = this.reglas
             .filter((r) => !r.cumplida(password))
             .map((r) => r.descripcion);
-        if (fallidas.length > 0) {
+        if (reglasFallidas.length > 0) {
             throw new common_1.BadRequestException({
-                message: 'La contraseña no cumple los requisitos de seguridad',
-                errores: fallidas,
+                message: 'La contraseña no cumple los requisitos',
+                errores: reglasFallidas,
+                tipo: 'requisitos',
             });
         }
         const resultado = zxcvbn(password);
         if (resultado.score < 2) {
+            const sugerencias = [];
+            if (resultado.feedback?.warning) {
+                sugerencias.push(this.traducir(resultado.feedback.warning));
+            }
+            (resultado.feedback?.suggestions ?? []).forEach((s) => {
+                sugerencias.push(this.traducir(s));
+            });
             throw new common_1.BadRequestException({
-                message: 'La contraseña es demasiado predecible o común',
-                sugerencia: resultado.feedback?.suggestions?.[0] ?? 'Usa una combinación más única',
+                message: 'La contraseña es demasiado fácil de adivinar',
+                errores: sugerencias.length > 0
+                    ? sugerencias
+                    : ['Usa una combinación más creativa. Evita palabras comunes, nombres o secuencias.'],
+                tipo: 'diccionario',
             });
         }
     }
@@ -3916,6 +3948,9 @@ let PasswordValidatorService = class PasswordValidatorService {
             descripcion: r.descripcion,
             cumplida: r.cumplida(password),
         }));
+    }
+    traducir(texto) {
+        return this.traducciones[texto] ?? texto;
     }
 };
 exports.PasswordValidatorService = PasswordValidatorService;
@@ -3935,15 +3970,15 @@ exports.PasswordValidatorService = PasswordValidatorService = __decorate([
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.buildBaseAlias = buildBaseAlias;
-function buildBaseAlias(nombre, apellido) {
-    const normalize = (str) => str
+function buildBaseAlias(nombre, apellidoPaterno) {
+    const normalizar = (str) => str
         .toLowerCase()
         .trim()
         .normalize('NFD')
         .replace(/[̀-ͯ]/g, '')
         .replace(/\s+/g, '.')
         .replace(/[^a-z0-9.]/g, '');
-    return `${normalize(nombre)}.${normalize(apellido)}`;
+    return `${normalizar(nombre)}.${normalizar(apellidoPaterno)}`;
 }
 
 
@@ -4210,7 +4245,7 @@ exports.validationSchema = Joi.object({
     PORT: Joi.number().default(3000),
     SHOW_ENV: Joi.boolean().default(false),
     PRINT_LOGS: Joi.boolean().default(false),
-    FRONTEND_URL: Joi.string().required(),
+    FRONTEND_URL: Joi.string().default(''),
     DATABASE_URL: Joi.string(),
     DB_TYPE: Joi.string(),
     DB_HOST: Joi.string(),
@@ -4222,6 +4257,8 @@ exports.validationSchema = Joi.object({
     ACTIVE_JWT: Joi.boolean().default(true),
     JWT_SECRET: Joi.string().required(),
     JWT_TIME_EXPIRE: Joi.string().required(),
+    USER_EMAIL: Joi.string().email().required(),
+    PASS_AUTH: Joi.string().required(),
     PASSWORD_EXPIRY_DAYS: Joi.number().default(60),
     PASSWORD_HISTORY_COUNT: Joi.number().default(10),
     MAX_LOGIN_ATTEMPTS: Joi.number().default(3),
@@ -15414,7 +15451,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UsuariosController = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
@@ -15424,6 +15461,7 @@ const express_1 = __webpack_require__(/*! express */ "express");
 const utils_1 = __webpack_require__(/*! src/common/utils */ "./src/common/utils/index.ts");
 const usuarios_service_1 = __webpack_require__(/*! ../services/usuarios.service */ "./src/modules/usuarios/services/usuarios.service.ts");
 const usuarios_auth_service_1 = __webpack_require__(/*! ../services/usuarios-auth.service */ "./src/modules/usuarios/services/usuarios-auth.service.ts");
+const password_history_service_1 = __webpack_require__(/*! ../services/password-history.service */ "./src/modules/usuarios/services/password-history.service.ts");
 const update_usuario_dto_1 = __webpack_require__(/*! ../dto/update-usuario.dto */ "./src/modules/usuarios/dto/update-usuario.dto.ts");
 const create_usuario_nuevo_dto_1 = __webpack_require__(/*! ../dto/create-usuario-nuevo.dto */ "./src/modules/usuarios/dto/create-usuario-nuevo.dto.ts");
 const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
@@ -15432,16 +15470,18 @@ const common_response_dto_1 = __webpack_require__(/*! src/shared/dto/common-resp
 let UsuariosController = class UsuariosController {
     usuariosService;
     usuariosAuthService;
-    constructor(usuariosService, usuariosAuthService) {
+    passwordHistoryService;
+    constructor(usuariosService, usuariosAuthService, passwordHistoryService) {
         this.usuariosService = usuariosService;
         this.usuariosAuthService = usuariosAuthService;
+        this.passwordHistoryService = passwordHistoryService;
     }
     async findAll(res) {
         const usuarios = await this.usuariosService.findAll();
         return (0, utils_1.OkRes)(res, { usuarios });
     }
-    async crearUsuario(dto, res) {
-        const usuario = await this.usuariosAuthService.crearUsuario(dto);
+    async crearUsuario(dto, req, res) {
+        await this.usuariosAuthService.crearUsuario(dto, req.user.rol);
         return (0, utils_1.CreatedRes)(res, { message: 'Usuario creado exitosamente. Las credenciales fueron enviadas por correo.' });
     }
     async cambiarPassword(dto, req, res) {
@@ -15460,6 +15500,15 @@ let UsuariosController = class UsuariosController {
         await this.usuariosAuthService.remove(id);
         return (0, utils_1.OkRes)(res, { message: 'Usuario eliminado' });
     }
+    async obtenerHistorialPasswords(id, res) {
+        const usuario = await this.usuariosService.findOne(id, { throwException: true });
+        const historial = await this.passwordHistoryService.obtenerHistorialFechas(id);
+        return (0, utils_1.OkRes)(res, {
+            id_usuario: usuario.id,
+            usuario: usuario.usuario,
+            ...historial,
+        });
+    }
 };
 exports.UsuariosController = UsuariosController;
 __decorate([
@@ -15469,7 +15518,7 @@ __decorate([
     (0, swagger_1.ApiOkResponse)({ description: 'Respuesta en caso de obtener usuarios', type: find_all_usuarios_dto_1.FindAllUsuariosDto }),
     __param(0, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_c = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _c : Object]),
+    __metadata("design:paramtypes", [typeof (_d = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _d : Object]),
     __metadata("design:returntype", Promise)
 ], UsuariosController.prototype, "findAll", null);
 __decorate([
@@ -15479,9 +15528,10 @@ __decorate([
     (0, swagger_1.ApiCreatedResponse)({ description: 'Usuario creado y credenciales enviadas por correo', type: common_response_dto_1.CommonResponseDto }),
     (0, swagger_1.ApiBadRequestResponse)((0, utils_1.SwaggerBadRequestCommon)()),
     __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Res)()),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_d = typeof create_usuario_nuevo_dto_1.CreateUsuarioNuevoDto !== "undefined" && create_usuario_nuevo_dto_1.CreateUsuarioNuevoDto) === "function" ? _d : Object, typeof (_e = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _e : Object]),
+    __metadata("design:paramtypes", [typeof (_e = typeof create_usuario_nuevo_dto_1.CreateUsuarioNuevoDto !== "undefined" && create_usuario_nuevo_dto_1.CreateUsuarioNuevoDto) === "function" ? _e : Object, Object, typeof (_f = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _f : Object]),
     __metadata("design:returntype", Promise)
 ], UsuariosController.prototype, "crearUsuario", null);
 __decorate([
@@ -15494,7 +15544,7 @@ __decorate([
     __param(1, (0, common_1.Req)()),
     __param(2, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_f = typeof usuarios_service_1.CambiarPasswordDto !== "undefined" && usuarios_service_1.CambiarPasswordDto) === "function" ? _f : Object, Object, typeof (_g = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _g : Object]),
+    __metadata("design:paramtypes", [typeof (_g = typeof usuarios_service_1.CambiarPasswordDto !== "undefined" && usuarios_service_1.CambiarPasswordDto) === "function" ? _g : Object, Object, typeof (_h = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _h : Object]),
     __metadata("design:returntype", Promise)
 ], UsuariosController.prototype, "cambiarPassword", null);
 __decorate([
@@ -15510,7 +15560,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, typeof (_h = typeof update_usuario_dto_1.UpdateUsuarioDto !== "undefined" && update_usuario_dto_1.UpdateUsuarioDto) === "function" ? _h : Object, typeof (_j = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _j : Object]),
+    __metadata("design:paramtypes", [Number, typeof (_j = typeof update_usuario_dto_1.UpdateUsuarioDto !== "undefined" && update_usuario_dto_1.UpdateUsuarioDto) === "function" ? _j : Object, typeof (_k = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _k : Object]),
     __metadata("design:returntype", Promise)
 ], UsuariosController.prototype, "updateUsuario", null);
 __decorate([
@@ -15523,7 +15573,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, typeof (_k = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _k : Object]),
+    __metadata("design:paramtypes", [Number, typeof (_l = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _l : Object]),
     __metadata("design:returntype", Promise)
 ], UsuariosController.prototype, "desbloquearCuenta", null);
 __decorate([
@@ -15537,12 +15587,25 @@ __decorate([
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, typeof (_l = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _l : Object]),
+    __metadata("design:paramtypes", [Number, typeof (_m = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _m : Object]),
     __metadata("design:returntype", Promise)
 ], UsuariosController.prototype, "deleteUsuario", null);
+__decorate([
+    (0, common_1.Get)(':id/historial-passwords'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
+    (0, swagger_1.ApiOperation)({ summary: 'Obtener historial de fechas de cambio de contraseña (sin hashes)' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Historial de fechas obtenido', type: common_response_dto_1.CommonResponseDto }),
+    (0, swagger_1.ApiNotFoundResponse)((0, utils_1.SwaggerNotFoundCommon)()),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Id del usuario' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, typeof (_o = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _o : Object]),
+    __metadata("design:returntype", Promise)
+], UsuariosController.prototype, "obtenerHistorialPasswords", null);
 exports.UsuariosController = UsuariosController = __decorate([
     (0, common_1.Controller)('api/usuarios'),
-    __metadata("design:paramtypes", [typeof (_a = typeof usuarios_service_1.UsuariosService !== "undefined" && usuarios_service_1.UsuariosService) === "function" ? _a : Object, typeof (_b = typeof usuarios_auth_service_1.UsuariosAuthService !== "undefined" && usuarios_auth_service_1.UsuariosAuthService) === "function" ? _b : Object])
+    __metadata("design:paramtypes", [typeof (_a = typeof usuarios_service_1.UsuariosService !== "undefined" && usuarios_service_1.UsuariosService) === "function" ? _a : Object, typeof (_b = typeof usuarios_auth_service_1.UsuariosAuthService !== "undefined" && usuarios_auth_service_1.UsuariosAuthService) === "function" ? _b : Object, typeof (_c = typeof password_history_service_1.PasswordHistoryService !== "undefined" && password_history_service_1.PasswordHistoryService) === "function" ? _c : Object])
 ], UsuariosController);
 
 
@@ -15565,46 +15628,81 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CreateUsuarioNuevoDto = void 0;
+exports.CreateUsuarioNuevoDto = exports.PermisosAdminDto = void 0;
 const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
 const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
+const class_transformer_1 = __webpack_require__(/*! class-transformer */ "class-transformer");
+class PermisosAdminDto {
+    panelUsuarios;
+    editarEmpresas;
+    formularioExterno;
+}
+exports.PermisosAdminDto = PermisosAdminDto;
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], PermisosAdminDto.prototype, "panelUsuarios", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], PermisosAdminDto.prototype, "editarEmpresas", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], PermisosAdminDto.prototype, "formularioExterno", void 0);
 class CreateUsuarioNuevoDto {
     nombre;
-    apellido;
+    apellidoPaterno;
+    apellidoMaterno;
     correoReal;
-    idRol;
+    tipoRol;
+    permisos;
+    rubrosAsignados;
 }
 exports.CreateUsuarioNuevoDto = CreateUsuarioNuevoDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'Juan Carlos' }),
+    (0, swagger_1.ApiProperty)({ example: 'Octavio' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateUsuarioNuevoDto.prototype, "nombre", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'Pérez López' }),
+    (0, swagger_1.ApiProperty)({ example: 'Luna' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], CreateUsuarioNuevoDto.prototype, "apellido", void 0);
+], CreateUsuarioNuevoDto.prototype, "apellidoPaterno", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        example: 'juan.perez@gmail.com',
-        description: 'Correo real del usuario. Aquí se enviará la contraseña temporal.',
-    }),
+    (0, swagger_1.ApiPropertyOptional)({ example: 'García' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateUsuarioNuevoDto.prototype, "apellidoMaterno", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'octavio.personal@gmail.com' }),
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], CreateUsuarioNuevoDto.prototype, "correoReal", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        example: 4,
-        description: '1=SUPERADMIN, 2=ADMIN_RRHH, 3=ADMIN_EMPRESAS, 4=INV_SENIOR, 5=INV_JUNIOR, 6=TEMPORAL, 7=VISITANTE',
-    }),
-    (0, class_validator_1.IsInt)(),
-    (0, class_validator_1.Min)(1),
-    (0, class_validator_1.Max)(7),
-    __metadata("design:type", Number)
-], CreateUsuarioNuevoDto.prototype, "idRol", void 0);
+    (0, swagger_1.ApiProperty)({ enum: ['admin', 'investigador'] }),
+    (0, class_validator_1.IsIn)(['admin', 'investigador']),
+    __metadata("design:type", String)
+], CreateUsuarioNuevoDto.prototype, "tipoRol", void 0);
+__decorate([
+    (0, class_validator_1.ValidateIf)((o) => o.tipoRol === 'admin'),
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => PermisosAdminDto),
+    (0, swagger_1.ApiPropertyOptional)({ type: PermisosAdminDto }),
+    __metadata("design:type", PermisosAdminDto)
+], CreateUsuarioNuevoDto.prototype, "permisos", void 0);
+__decorate([
+    (0, class_validator_1.ValidateIf)((o) => o.tipoRol === 'investigador'),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsInt)({ each: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiPropertyOptional)({ type: [Number] }),
+    __metadata("design:type", Array)
+], CreateUsuarioNuevoDto.prototype, "rubrosAsignados", void 0);
 
 
 /***/ }),
@@ -15853,6 +15951,59 @@ exports.InvestigadorEmpresa = InvestigadorEmpresa = __decorate([
 
 /***/ }),
 
+/***/ "./src/modules/usuarios/entities/investigador-rubro.entity.ts":
+/*!********************************************************************!*\
+  !*** ./src/modules/usuarios/entities/investigador-rubro.entity.ts ***!
+  \********************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.InvestigadorRubro = void 0;
+const typeorm_1 = __webpack_require__(/*! typeorm */ "typeorm");
+const usuario_entity_1 = __webpack_require__(/*! ./usuario.entity */ "./src/modules/usuarios/entities/usuario.entity.ts");
+let InvestigadorRubro = class InvestigadorRubro {
+    id;
+    idUsuario;
+    idRubro;
+    usuario;
+};
+exports.InvestigadorRubro = InvestigadorRubro;
+__decorate([
+    (0, typeorm_1.PrimaryGeneratedColumn)(),
+    __metadata("design:type", Number)
+], InvestigadorRubro.prototype, "id", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'id_usuario' }),
+    __metadata("design:type", Number)
+], InvestigadorRubro.prototype, "idUsuario", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'id_rubro' }),
+    __metadata("design:type", Number)
+], InvestigadorRubro.prototype, "idRubro", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => usuario_entity_1.Usuario, { onDelete: 'CASCADE' }),
+    (0, typeorm_1.JoinColumn)({ name: 'id_usuario' }),
+    __metadata("design:type", typeof (_a = typeof usuario_entity_1.Usuario !== "undefined" && usuario_entity_1.Usuario) === "function" ? _a : Object)
+], InvestigadorRubro.prototype, "usuario", void 0);
+exports.InvestigadorRubro = InvestigadorRubro = __decorate([
+    (0, typeorm_1.Entity)('investigador_rubro'),
+    (0, typeorm_1.Unique)(['idUsuario', 'idRubro'])
+], InvestigadorRubro);
+
+
+/***/ }),
+
 /***/ "./src/modules/usuarios/entities/password-history.entity.ts":
 /*!******************************************************************!*\
   !*** ./src/modules/usuarios/entities/password-history.entity.ts ***!
@@ -15946,6 +16097,7 @@ let Usuario = class Usuario {
     isLocked;
     failedAttempts;
     lockedAt;
+    accesoFormularioExterno;
     resetToken;
     resetTokenExpires;
     expiracion;
@@ -16010,6 +16162,10 @@ __decorate([
     (0, typeorm_1.Column)({ name: 'locked_at', type: 'timestamp', nullable: true }),
     __metadata("design:type", typeof (_c = typeof Date !== "undefined" && Date) === "function" ? _c : Object)
 ], Usuario.prototype, "lockedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: 'acceso_formulario_externo', default: false }),
+    __metadata("design:type", Boolean)
+], Usuario.prototype, "accesoFormularioExterno", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: 'reset_token', nullable: true }),
     __metadata("design:type", String)
@@ -16278,6 +16434,22 @@ let PasswordHistoryService = class PasswordHistoryService {
         });
         return historial.map((h) => ({ fecha: h.createdAt }));
     }
+    async obtenerHistorialFechas(idUsuario) {
+        const entradas = await this.repo.find({
+            where: { idUsuario },
+            order: { createdAt: 'DESC' },
+            take: 10,
+            select: ['id', 'createdAt'],
+        });
+        return {
+            total_cambios: entradas.length,
+            historial: entradas.map((entrada, index) => ({
+                posicion: index + 1,
+                fecha: entrada.createdAt,
+                es_actual: index === 0,
+            })),
+        };
+    }
 };
 exports.PasswordHistoryService = PasswordHistoryService;
 exports.PasswordHistoryService = PasswordHistoryService = __decorate([
@@ -16308,7 +16480,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c;
+var _a, _b, _c, _d;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UsuariosAuthService = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
@@ -16321,12 +16493,15 @@ const usuarios_service_1 = __webpack_require__(/*! ./usuarios.service */ "./src/
 const email_service_1 = __webpack_require__(/*! src/shared/services/email/email.service */ "./src/shared/services/email/email.service.ts");
 const alias_generator_util_1 = __webpack_require__(/*! src/common/utils/alias-generator.util */ "./src/common/utils/alias-generator.util.ts");
 const date_fns_1 = __webpack_require__(/*! date-fns */ "date-fns");
+const investigador_rubro_entity_1 = __webpack_require__(/*! ../entities/investigador-rubro.entity */ "./src/modules/usuarios/entities/investigador-rubro.entity.ts");
 let UsuariosAuthService = class UsuariosAuthService {
     usuarioRepository;
+    investigadorRubroRepository;
     usuariosService;
     emailService;
-    constructor(usuarioRepository, usuariosService, emailService) {
+    constructor(usuarioRepository, investigadorRubroRepository, usuariosService, emailService) {
         this.usuarioRepository = usuarioRepository;
+        this.investigadorRubroRepository = investigadorRubroRepository;
         this.usuariosService = usuariosService;
         this.emailService = emailService;
     }
@@ -16357,17 +16532,11 @@ let UsuariosAuthService = class UsuariosAuthService {
         return usuarioSaved;
     }
     async update(id, data) {
-        const entity = await this.usuariosService.findOne(id, {
-            throwException: true,
-        });
+        const entity = await this.usuariosService.findOne(id, { throwException: true });
         if (data.usuario && data.usuario !== entity.usuario) {
-            const repeated = await this.usuariosService.findByUsuario(data.usuario, {
-                throwException: false,
-            });
+            const repeated = await this.usuariosService.findByUsuario(data.usuario, { throwException: false });
             if (repeated && repeated.id !== id) {
-                throw new common_1.ConflictException({
-                    message: 'El nombre de usuario ya está en uso.',
-                });
+                throw new common_1.ConflictException({ message: 'El nombre de usuario ya está en uso.' });
             }
             entity.usuario = data.usuario;
         }
@@ -16375,13 +16544,9 @@ let UsuariosAuthService = class UsuariosAuthService {
             entity.contrasenia = await (0, utils_1.hashPassword)(data.contrasenia);
         }
         if (data.correo && data.correo !== entity.correo) {
-            const repeatedEmail = await this.usuariosService.findOneByCorreo(data.correo, {
-                throwException: false,
-            });
+            const repeatedEmail = await this.usuariosService.findOneByCorreo(data.correo, { throwException: false });
             if (repeatedEmail && repeatedEmail.id !== id) {
-                throw new common_1.ConflictException({
-                    message: 'El correo ya está en uso.',
-                });
+                throw new common_1.ConflictException({ message: 'El correo ya está en uso.' });
             }
             entity.correo = data.correo;
         }
@@ -16392,34 +16557,71 @@ let UsuariosAuthService = class UsuariosAuthService {
         return this.sanitize(updated);
     }
     async remove(id) {
-        const exists = await this.usuariosService.findOne(id, {
-            throwException: true
-        });
+        await this.usuariosService.findOne(id, { throwException: true });
         await this.usuarioRepository.delete(id);
         return true;
     }
-    async crearUsuario(dto) {
-        const alias = await this.generarAliasUnico(dto.nombre, dto.apellido);
+    async crearUsuario(dto, creadorIdRol) {
+        const alias = await this.generarAliasUnico(dto.nombre, dto.apellidoPaterno);
         const tempPassword = this.generarPasswordTemporal();
         const hash = await (0, utils_1.hashPassword)(tempPassword);
+        let idRol;
+        if (dto.tipoRol === 'admin') {
+            idRol = this.calcularRolAdmin(dto.permisos?.panelUsuarios ?? false, dto.permisos?.editarEmpresas ?? false, dto.permisos?.formularioExterno ?? false, creadorIdRol === 1);
+        }
+        else {
+            const esJunior = dto.rubrosAsignados && dto.rubrosAsignados.length > 0;
+            idRol = esJunior ? 5 : 4;
+        }
+        const apellido = dto.apellidoMaterno
+            ? `${dto.apellidoPaterno} ${dto.apellidoMaterno}`
+            : dto.apellidoPaterno;
         const nuevoUsuario = this.usuarioRepository.create({
             nombre: dto.nombre,
-            apellido: dto.apellido,
+            apellido: apellido,
             usuario: alias,
             correo: `${alias}@orbis.com`,
             correoReal: dto.correoReal,
             contrasenia: hash,
-            idRol: dto.idRol,
+            idRol: idRol,
             mustChangePassword: true,
             passwordExpiresAt: (0, date_fns_1.addDays)(new Date(), 60),
+            accesoFormularioExterno: dto.permisos?.formularioExterno ?? false,
         });
         const guardado = await this.usuarioRepository.save(nuevoUsuario);
-        await this.emailService.enviarPasswordTemporal(dto.correoReal, alias, tempPassword);
+        if (idRol === 5 && dto.rubrosAsignados && dto.rubrosAsignados.length > 0) {
+            const asignaciones = dto.rubrosAsignados.map((idRubro) => ({
+                idUsuario: guardado.id,
+                idRubro,
+            }));
+            await this.investigadorRubroRepository.save(asignaciones);
+        }
+        if (dto.permisos?.formularioExterno) {
+            await this.emailService.enviarAccesoFormularioExterno(dto.correoReal, alias, tempPassword, 'https://orbis-empresarial.vercel.app/');
+        }
+        else {
+            await this.emailService.enviarPasswordTemporal(dto.correoReal, alias, tempPassword);
+        }
         const { contrasenia, ...resultado } = guardado;
         return resultado;
     }
-    async generarAliasUnico(nombre, apellido) {
-        const base = (0, alias_generator_util_1.buildBaseAlias)(nombre, apellido);
+    calcularRolAdmin(permisoUsuarios, permisoEmpresas, permisoFormularioExterno, creadorEsSuperadmin) {
+        if (permisoUsuarios && permisoEmpresas) {
+            if (!creadorEsSuperadmin) {
+                throw new common_1.ForbiddenException('Solo un SUPERADMIN puede crear usuarios con acceso total al sistema');
+            }
+            return 1;
+        }
+        if (permisoUsuarios)
+            return 2;
+        if (permisoEmpresas)
+            return 3;
+        if (permisoFormularioExterno)
+            return 3;
+        throw new common_1.BadRequestException('Un administrador debe tener al menos un acceso asignado');
+    }
+    async generarAliasUnico(nombre, apellidoPaterno) {
+        const base = (0, alias_generator_util_1.buildBaseAlias)(nombre, apellidoPaterno);
         let alias = base;
         let contador = 2;
         while (await this.usuarioRepository.existsBy({ usuario: alias })) {
@@ -16445,7 +16647,8 @@ exports.UsuariosAuthService = UsuariosAuthService;
 exports.UsuariosAuthService = UsuariosAuthService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(usuario_entity_1.Usuario)),
-    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _a : Object, typeof (_b = typeof usuarios_service_1.UsuariosService !== "undefined" && usuarios_service_1.UsuariosService) === "function" ? _b : Object, typeof (_c = typeof email_service_1.EmailService !== "undefined" && email_service_1.EmailService) === "function" ? _c : Object])
+    __param(1, (0, typeorm_1.InjectRepository)(investigador_rubro_entity_1.InvestigadorRubro)),
+    __metadata("design:paramtypes", [typeof (_a = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _a : Object, typeof (_b = typeof typeorm_2.Repository !== "undefined" && typeorm_2.Repository) === "function" ? _b : Object, typeof (_c = typeof usuarios_service_1.UsuariosService !== "undefined" && usuarios_service_1.UsuariosService) === "function" ? _c : Object, typeof (_d = typeof email_service_1.EmailService !== "undefined" && email_service_1.EmailService) === "function" ? _d : Object])
 ], UsuariosAuthService);
 
 
@@ -16491,7 +16694,7 @@ class CambiarPasswordDto {
 exports.CambiarPasswordDto = CambiarPasswordDto;
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CambiarPasswordDto.prototype, "passwordActual", void 0);
 __decorate([
@@ -16577,6 +16780,9 @@ let UsuariosService = class UsuariosService {
         if (!usuario)
             throw new common_1.NotFoundException('Usuario no encontrado');
         if (!usuario.mustChangePassword) {
+            if (!dto.passwordActual) {
+                throw new common_1.BadRequestException('La contraseña actual es requerida');
+            }
             const actualValida = await bcrypt.compare(dto.passwordActual, usuario.contrasenia);
             if (!actualValida) {
                 throw new common_1.BadRequestException('La contraseña actual es incorrecta');
@@ -16675,8 +16881,10 @@ let UsuariosService = class UsuariosService {
             passwordChangedAt: new Date(),
             passwordExpiresAt: (0, date_fns_1.addDays)(new Date(), 60),
             failedAttempts: 0,
-            resetToken: undefined,
-            resetTokenExpires: undefined,
+            isLocked: false,
+            lockedAt: null,
+            resetToken: null,
+            resetTokenExpires: null,
         });
     }
 };
@@ -16826,6 +17034,7 @@ const typeorm_1 = __webpack_require__(/*! @nestjs/typeorm */ "@nestjs/typeorm");
 const usuario_entity_1 = __webpack_require__(/*! ./entities/usuario.entity */ "./src/modules/usuarios/entities/usuario.entity.ts");
 const password_history_entity_1 = __webpack_require__(/*! ./entities/password-history.entity */ "./src/modules/usuarios/entities/password-history.entity.ts");
 const investigador_empresa_entity_1 = __webpack_require__(/*! ./entities/investigador-empresa.entity */ "./src/modules/usuarios/entities/investigador-empresa.entity.ts");
+const investigador_rubro_entity_1 = __webpack_require__(/*! ./entities/investigador-rubro.entity */ "./src/modules/usuarios/entities/investigador-rubro.entity.ts");
 const usuarios_auth_service_1 = __webpack_require__(/*! ./services/usuarios-auth.service */ "./src/modules/usuarios/services/usuarios-auth.service.ts");
 const usuarios_task_service_1 = __webpack_require__(/*! ./tasks/usuarios-task.service */ "./src/modules/usuarios/tasks/usuarios-task.service.ts");
 const email_module_1 = __webpack_require__(/*! src/shared/services/email/email.module */ "./src/shared/services/email/email.module.ts");
@@ -16836,7 +17045,7 @@ exports.UsuariosModule = UsuariosModule;
 exports.UsuariosModule = UsuariosModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            typeorm_1.TypeOrmModule.forFeature([usuario_entity_1.Usuario, password_history_entity_1.PasswordHistory, investigador_empresa_entity_1.InvestigadorEmpresa]),
+            typeorm_1.TypeOrmModule.forFeature([usuario_entity_1.Usuario, password_history_entity_1.PasswordHistory, investigador_empresa_entity_1.InvestigadorEmpresa, investigador_rubro_entity_1.InvestigadorRubro]),
             email_module_1.EmailModule,
         ],
         controllers: [usuarios_controller_1.UsuariosController],
@@ -17114,7 +17323,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EmailModule = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const mailer_1 = __webpack_require__(/*! @nestjs-modules/mailer */ "@nestjs-modules/mailer");
-const path_1 = __webpack_require__(/*! path */ "path");
 const email_service_1 = __webpack_require__(/*! ./email.service */ "./src/shared/services/email/email.service.ts");
 const email_config_1 = __webpack_require__(/*! src/config/services/email.config */ "./src/config/services/email.config.ts");
 let EmailModule = class EmailModule {
@@ -17125,22 +17333,22 @@ exports.EmailModule = EmailModule = __decorate([
         imports: [
             mailer_1.MailerModule.forRootAsync({
                 inject: [email_config_1.MyEmailConfig],
-                useFactory: async (emailConfig) => ({
-                    transport: {
-                        host: 'smtp.gmail.com',
-                        port: 587,
-                        auth: emailConfig.get()
-                    },
-                    defaults: {
-                        from: '"No Reply" <noreply@ejemplo.com>',
-                    },
-                    template: {
-                        dir: (0, path_1.join)(__dirname, 'templates'),
-                        options: {
-                            strict: true,
+                useFactory: async (emailConfig) => {
+                    const { user, pass } = emailConfig.get();
+                    console.log(`[EmailModule] SMTP user=${user ?? '(no configurado)'}`);
+                    return {
+                        transport: {
+                            host: 'smtp.gmail.com',
+                            port: 587,
+                            secure: false,
+                            auth: { user, pass },
+                            tls: { rejectUnauthorized: false },
                         },
-                    },
-                })
+                        defaults: {
+                            from: `"Orbis" <${user ?? 'noreply@orbis.com'}>`,
+                        },
+                    };
+                }
             }),
         ],
         providers: [email_service_1.EmailService],
@@ -17195,6 +17403,7 @@ let EmailService = class EmailService {
             });
         }
         catch (error) {
+            console.error('[EmailService] Error al enviar correo:', error?.message ?? error);
         }
     }
     async sendEmail(options) {
@@ -17259,6 +17468,34 @@ let EmailService = class EmailService {
 					<p>Hola <strong>${usuario}</strong>,</p>
 					<p>Tu contraseña ha expirado. Deberás crear una nueva contraseña la próxima vez que inicies sesión.</p>
 					<p>El sistema te redirigirá automáticamente al formulario de cambio de contraseña.</p>
+				</div>
+			`,
+        });
+    }
+    async enviarAccesoFormularioExterno(correoReal, alias, pwd, formularioUrl) {
+        await this.sendEmail({
+            to: correoReal,
+            subject: 'Orbis — Tu cuenta y acceso al formulario de empresas',
+            html: `
+				<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+					<h2 style="color: #1a1a2e;">Bienvenido a Orbis</h2>
+					<p>Tu cuenta ha sido creada. Tus credenciales de acceso son:</p>
+					<div style="background: #f4f4f4; padding: 16px; border-radius: 8px; margin: 16px 0;">
+						<p><strong>Usuario:</strong> ${alias}@orbis.com</p>
+						<p><strong>Contraseña temporal:</strong>
+						   <code style="font-size: 16px; color: #e74c3c;">${pwd}</code></p>
+					</div>
+					<p>⚠️ <strong>Esta contraseña es temporal.</strong> Al ingresar, serás redirigido a cambiarla.</p>
+					<hr style="margin: 24px 0; border: none; border-top: 1px solid #eee;" />
+					<h3 style="color: #0f2c4a;">Acceso al formulario de registro de empresas</h3>
+					<p>También tienes acceso al formulario externo de registro de empresas:</p>
+					<div style="text-align: center; margin: 20px 0;">
+						<a href="${formularioUrl}"
+						   style="background: #F29E38; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+							Abrir formulario de empresas
+						</a>
+					</div>
+					<p style="color: #7f8c8d; font-size: 12px;">Este correo es confidencial. No lo compartas con nadie.</p>
 				</div>
 			`,
         });
@@ -17541,16 +17778,6 @@ module.exports = require("passport-jwt");
 
 /***/ }),
 
-/***/ "path":
-/*!***********************!*\
-  !*** external "path" ***!
-  \***********************/
-/***/ ((module) => {
-
-module.exports = require("path");
-
-/***/ }),
-
 /***/ "typeorm":
 /*!**************************!*\
   !*** external "typeorm" ***!
@@ -17617,11 +17844,27 @@ async function bootstrap() {
     const configService = app.get(config_service_1.MyConfigService);
     app.enableShutdownHooks();
     const isDev = configService.get('NODE_ENV') !== 'production';
+    const HARDCODED_ORIGINS = ['https://orbis-seguridad.vercel.app'];
+    const envOrigins = (configService.get('FRONTEND_URL') ?? '')
+        .split(',')
+        .map((u) => u.trim().replace(/\/$/, ''))
+        .filter(Boolean);
+    const allowedOrigins = [...new Set([...HARDCODED_ORIGINS, ...envOrigins])];
+    console.log(`[CORS] mode=${isDev ? 'dev' : 'prod'} allowed=${JSON.stringify(allowedOrigins)}`);
     app.enableCors({
         origin: isDev
             ? (origin, callback) => callback(null, true)
-            : configService.get('FRONTEND_URL'),
-        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+            : (origin, callback) => {
+                const normalized = (origin ?? '').replace(/\/$/, '');
+                if (!origin || allowedOrigins.includes(normalized)) {
+                    callback(null, true);
+                }
+                else {
+                    console.warn(`[CORS] Rejected origin: "${origin}"`);
+                    callback(new Error(`CORS: origen no permitido → ${origin}`));
+                }
+            },
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
     });
     app.useGlobalPipes(new common_1.ValidationPipe({
@@ -17641,9 +17884,12 @@ async function bootstrap() {
         const document = swagger_1.SwaggerModule.createDocument(app, config);
         swagger_1.SwaggerModule.setup('api/documentation', app, document);
     }
-    await app.listen(configService.get('PORT') ?? 3000);
+    await app.listen(configService.get('PORT') ?? 3000, '0.0.0.0');
 }
-bootstrap();
+bootstrap().catch((err) => {
+    console.error('[BOOTSTRAP ERROR]', err);
+    process.exit(1);
+});
 
 })();
 
