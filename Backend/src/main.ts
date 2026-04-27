@@ -12,13 +12,28 @@ async function bootstrap() {
     // Habilitamos el "shutdown hook" para que Nest cierre conexiones correctamente
     app.enableShutdownHooks();
 
-    // En desarrollo acepta cualquier localhost; en producción solo la URL configurada
+    // En desarrollo acepta cualquier origen; en producción solo los orígenes configurados
     const isDev = configService.get('NODE_ENV') !== 'production';
+    const allowedOrigins: (string | RegExp)[] = isDev
+        ? []
+        : (configService.get<string>('FRONTEND_URL') ?? '')
+              .split(',')
+              .map((u) => u.trim())
+              .filter(Boolean);
+
     app.enableCors({
         origin: isDev
             ? (origin, callback) => callback(null, true)
-            : configService.get('FRONTEND_URL'),
-        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+            : (origin, callback) => {
+                  if (!origin || allowedOrigins.some((o) =>
+                      typeof o === 'string' ? o === origin : o.test(origin)
+                  )) {
+                      callback(null, true);
+                  } else {
+                      callback(new Error(`CORS: origen no permitido → ${origin}`));
+                  }
+              },
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
     });
 
