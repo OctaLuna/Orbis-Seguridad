@@ -61,6 +61,6 @@ async function bootstrap() {
     }
 
     // El puerto se lee desde las variables de entorno (esto ya lo tenías y es correcto)
-    await app.listen(configService.get('PORT') ?? 3000);
+    await app.listen(configService.get('PORT') ?? 3000, '0.0.0.0');
 }
 bootstrap();
