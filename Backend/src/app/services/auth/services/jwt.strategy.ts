@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { MyJwtConfig } from 'src/config/services/jwt.config';
 import { UsuariosService } from 'src/modules/usuarios/services/usuarios.service';
-import { RolesEnum } from 'src/shared/constants/roles.const';
+import { Rol } from 'src/shared/constants/roles.const';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -37,7 +37,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             });
         }
 
-        if (usuario.idRol !== RolesEnum.TEMPORAL) {
+        if (usuario.idRol !== Rol.TEMPORAL) {
             return data;
         }
 

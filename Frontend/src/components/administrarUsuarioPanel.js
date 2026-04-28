@@ -39,8 +39,6 @@ const ROL_EDIT_OPTIONS = [
   { value: 3, label: 'Admin Empresas' },
   { value: 4, label: 'Investigador Senior' },
   { value: 5, label: 'Investigador Junior' },
-  { value: 6, label: 'Temporal' },
-  { value: 7, label: 'Visitante' },
 ];
 
 // ─── Estado inicial del formulario de creación ─────────────────────────────────
@@ -985,12 +983,13 @@ const AdministrarUsuarioPanel = () => {
             <div className="p-6 text-center">
               <div className="text-4xl mb-3">⚠️</div>
               <h2 className="font-bodoni font-bold text-gray-800 text-lg mb-2">
-                Eliminar usuario
+                Desactivar usuario
               </h2>
-              <p className="text-sm text-gray-500 font-miles mb-6">
-                ¿Estás seguro que deseas eliminar a{' '}
-                <strong>{usuarioSeleccionado.usuario}</strong>?
-                Esta acción no se puede deshacer.
+              <p className="text-sm text-gray-500 font-miles mb-2">
+                ¿Desactivar a <strong>{usuarioSeleccionado.usuario}</strong>?
+              </p>
+              <p className="text-xs text-gray-400 font-miles mb-6">
+                El usuario no podrá iniciar sesión, pero sus datos se conservarán. Un superadmin puede restaurarlo.
               </p>
               <div className="flex gap-3">
                 <button
@@ -1003,7 +1002,7 @@ const AdministrarUsuarioPanel = () => {
                   onClick={handleEliminar}
                   className="flex-1 py-2.5 rounded-xl text-sm font-bodoni font-bold text-white uppercase bg-red-600 hover:bg-red-700 transition-colors"
                 >
-                  Eliminar
+                  Desactivar
                 </button>
               </div>
             </div>

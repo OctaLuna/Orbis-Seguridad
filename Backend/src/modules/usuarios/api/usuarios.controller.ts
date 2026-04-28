@@ -93,6 +93,19 @@ export class UsuariosController {
 		return OkRes(res, { message: 'Cuenta desbloqueada exitosamente' });
 	}
 
+	@Patch(':id/restaurar')
+	@UseGuards(AuthRolesGuard([Rol.SUPERADMIN]))
+	@ApiOperation({ summary: 'Restaurar usuario desactivado (solo SUPERADMIN)' })
+	@ApiOkResponse({ description: 'Usuario restaurado exitosamente', type: CommonResponseDto })
+	@ApiParam({ name: 'id', description: 'Id del usuario' })
+	async restaurarUsuario(
+		@Param('id', ParseIntPipe) id: number,
+		@Res() res: Response,
+	) {
+		await this.usuariosService.restaurar(id);
+		return OkRes(res, { message: 'Usuario restaurado exitosamente' });
+	}
+
 	@Delete(':id')
 	@UseGuards(AuthRolesGuard([Rol.ADMIN_RRHH]))
 	@ApiOperation({ summary: 'Api para eliminar a un usuario (solo admins)' })

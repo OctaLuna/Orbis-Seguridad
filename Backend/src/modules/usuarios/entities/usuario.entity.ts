@@ -1,5 +1,5 @@
 import {
-    Column, CreateDateColumn, Entity, JoinColumn,
+    Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn,
     ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn,
 } from 'typeorm';
 import { Rol } from '../modules/roles/entities/rol.entity';
@@ -75,6 +75,9 @@ export class Usuario {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
+
+    @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+    deletedAt: Date;
 
     @ManyToOne(() => Rol, (rol) => rol.usuarios)
     @JoinColumn({ name: 'id_rol' })
