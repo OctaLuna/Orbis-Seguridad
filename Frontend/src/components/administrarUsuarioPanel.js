@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { History, ShieldCheck, Clock, ChevronUp } from 'lucide-react';
+import { History, ShieldCheck, Clock, ChevronUp, Shield, Users, Building2, Search, SearchCheck, CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
 import API from '../services/api';
 import { getUsuarios, deleteUsuario, updateUsuario, desbloquearCuenta } from '../services/usuarioService';
 
@@ -40,6 +40,80 @@ const ROL_EDIT_OPTIONS = [
   { value: 4, label: 'Investigador Senior' },
   { value: 5, label: 'Investigador Junior' },
 ];
+
+// ─── Descripción de roles ──────────────────────────────────────────────────────
+const DESCRIPCION_ROLES = {
+  1: {
+    nombre: 'Superadmin',
+    descripcion: 'Control total del sistema. Acceso sin restricciones a todas las funcionalidades.',
+    icono: Shield,
+    acciones: [
+      { label: 'Gestionar todos los usuarios',       puede: true  },
+      { label: 'Crear y editar empresas',            puede: true  },
+      { label: 'Eliminar empresas y usuarios',       puede: true  },
+      { label: 'Cambiar roles de cualquier usuario', puede: true  },
+      { label: 'Acceder al formulario externo',      puede: true  },
+      { label: 'Ver historial de contraseñas',       puede: true  },
+      { label: 'Desbloquear cuentas',                puede: true  },
+    ],
+  },
+  2: {
+    nombre: 'Admin RRHH',
+    descripcion: 'Gestiona las cuentas de usuario del sistema. No tiene acceso al catálogo de empresas.',
+    icono: Users,
+    acciones: [
+      { label: 'Crear y editar usuarios',            puede: true  },
+      { label: 'Desbloquear cuentas bloqueadas',     puede: true  },
+      { label: 'Ver historial de contraseñas',       puede: true  },
+      { label: 'Asignar roles a usuarios',           puede: true  },
+      { label: 'Crear o editar empresas',            puede: false },
+      { label: 'Eliminar empresas',                  puede: false },
+      { label: 'Acceder al formulario externo',      puede: false },
+    ],
+  },
+  3: {
+    nombre: 'Admin Empresas',
+    descripcion: 'Gestiona el catálogo de empresas. No tiene acceso al panel de usuarios.',
+    icono: Building2,
+    acciones: [
+      { label: 'Crear y editar empresas',            puede: true  },
+      { label: 'Acceder al formulario externo',      puede: true  },
+      { label: 'Asignar investigadores a empresas',  puede: true  },
+      { label: 'Ver catálogo completo',              puede: true  },
+      { label: 'Gestionar cuentas de usuario',       puede: false },
+      { label: 'Desbloquear cuentas',                puede: false },
+      { label: 'Eliminar empresas',                  puede: false },
+    ],
+  },
+  4: {
+    nombre: 'Investigador Senior',
+    descripcion: 'Acceso de lectura a todas las empresas del catálogo sin restricción de rubro.',
+    icono: SearchCheck,
+    acciones: [
+      { label: 'Ver todas las empresas',             puede: true  },
+      { label: 'Ver fichas completas de empresas',   puede: true  },
+      { label: 'Filtrar por rubro, tamaño, etc.',    puede: true  },
+      { label: 'Crear o editar empresas',            puede: false },
+      { label: 'Gestionar usuarios',                 puede: false },
+      { label: 'Acceder al formulario externo',      puede: false },
+      { label: 'Eliminar contenido',                 puede: false },
+    ],
+  },
+  5: {
+    nombre: 'Investigador Junior',
+    descripcion: 'Acceso limitado. Solo puede ver empresas de los rubros que le fueron asignados.',
+    icono: Search,
+    acciones: [
+      { label: 'Ver empresas de sus rubros asignados', puede: true  },
+      { label: 'Ver fichas de empresas asignadas',     puede: true  },
+      { label: 'Ver empresas fuera de sus rubros',     puede: false },
+      { label: 'Crear o editar empresas',              puede: false },
+      { label: 'Gestionar usuarios',                   puede: false },
+      { label: 'Acceder al formulario externo',        puede: false },
+      { label: 'Eliminar contenido',                   puede: false },
+    ],
+  },
+};
 
 // ─── Estado inicial del formulario de creación ─────────────────────────────────
 const FORM_INICIAL = {
@@ -142,6 +216,94 @@ const formatearFechaHistorial = (fechaISO) => {
     hour: '2-digit', minute: '2-digit',
   });
 };
+
+// ─── Tarjeta de descripción de rol ────────────────────────────────────────────
+function TarjetaRol({ idRol }) {
+  const info = DESCRIPCION_ROLES[idRol];
+  if (!info) return null;
+  const Icono = info.icono;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.18 }}
+      className="mt-3 border border-gray-200 rounded-xl bg-white p-4"
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+          <Icono size={16} className="text-gray-700" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-gray-900">{info.nombre}</p>
+          <p className="text-xs text-gray-500 leading-snug">{info.descripcion}</p>
+        </div>
+      </div>
+      <div className="border-t border-gray-100 mb-3" />
+      <div className="space-y-1.5">
+        {info.acciones.map((accion, i) => (
+          <div key={i} className="flex items-center gap-2">
+            {accion.puede ? (
+              <CheckCircle size={13} className="text-gray-600 flex-shrink-0" />
+            ) : (
+              <XCircle size={13} className="text-gray-300 flex-shrink-0" />
+            )}
+            <span className={`text-xs ${accion.puede ? 'text-gray-700' : 'text-gray-400'}`}>
+              {accion.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Accesos rápidos ───────────────────────────────────────────────────────────
+const ACCESOS_RAPIDOS = [
+  {
+    id: 'formulario-empresas',
+    titulo: 'Formulario de registro',
+    descripcion: 'Registrar nueva empresa en el catálogo',
+    url: 'https://orbis-empresarial.vercel.app/',
+    icono: FileText,
+    rolesPermitidos: [1, 3],
+    externo: true,
+  },
+];
+
+function PanelAccesosRapidos({ idRolUsuario }) {
+  const accesosVisibles = ACCESOS_RAPIDOS.filter(
+    (a) => a.rolesPermitidos.includes(idRolUsuario)
+  );
+  if (accesosVisibles.length === 0) return null;
+  return (
+    <div className="px-6 pt-5 pb-1">
+      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+        Accesos rápidos
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {accesosVisibles.map((acceso) => {
+          const Icono = acceso.icono;
+          return (
+            <a
+              key={acceso.id}
+              href={acceso.url}
+              target={acceso.externo ? '_blank' : '_self'}
+              rel={acceso.externo ? 'noopener noreferrer' : undefined}
+              className="flex items-center gap-2.5 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 font-medium hover:border-gray-400 hover:bg-gray-50 transition-all duration-150 group"
+            >
+              <Icono size={15} className="text-gray-500 group-hover:text-gray-700 transition-colors" />
+              <span>{acceso.titulo}</span>
+              {acceso.externo && (
+                <ExternalLink size={11} className="text-gray-300 group-hover:text-gray-500 transition-colors ml-0.5" />
+              )}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // ─── Componente principal ──────────────────────────────────────────────────────
 const AdministrarUsuarioPanel = () => {
@@ -359,6 +521,14 @@ const AdministrarUsuarioPanel = () => {
     ? generarAliasPreview(form.nombre, form.apellidoPaterno)
     : null;
 
+  // ─── Rol del usuario logueado (para accesos rápidos) ─────────────────────────
+  const rolUsuarioLogueado = (() => {
+    try {
+      const authData = JSON.parse(localStorage.getItem('authData') || '{}');
+      return authData?.user?.idRol ?? authData?.user?.id_rol ?? null;
+    } catch { return null; }
+  })();
+
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <motion.div
@@ -410,6 +580,8 @@ const AdministrarUsuarioPanel = () => {
         {errorUsuarios && (
           <div className="px-8 py-3 text-sm text-red-600">{errorUsuarios}</div>
         )}
+
+        <PanelAccesosRapidos idRolUsuario={rolUsuarioLogueado} />
 
         {/* Lista de usuarios */}
         <motion.div
@@ -954,6 +1126,9 @@ const AdministrarUsuarioPanel = () => {
                     <option key={r.value} value={r.value}>{r.label}</option>
                   ))}
                 </select>
+                <AnimatePresence mode="wait">
+                  <TarjetaRol key={editRol} idRol={editRol} />
+                </AnimatePresence>
               </div>
 
               <div className="flex gap-3">
