@@ -310,6 +310,38 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
     }
   };
 
+  const handleEmpresaCreate = async (datosEmpresa) => {
+    if (!canEdit) return;
+    
+    setModalSaving(true);
+    setModalError(null);
+    try {
+      // Usamos el apiClient que ya tienes importado para hacer el POST
+      await apiClient.post('/api/empresas', datosEmpresa);
+      
+      Swal.fire({
+        title: '¡Creada!',
+        text: 'La empresa ha sido registrada con éxito.',
+        icon: 'success',
+        confirmButtonColor: '#2C5282'
+      }).then(() => {
+         // Recargamos la página para que la nueva empresa aparezca en la lista
+         window.location.reload(); 
+      });
+      
+      handleCloseModal();
+    } catch (err) {
+      console.error('Error al crear la empresa:', err);
+      const backendMessage = err?.response?.data?.message;
+      const mensaje = Array.isArray(backendMessage)
+        ? backendMessage.join(', ')
+        : backendMessage || 'No se pudo crear la empresa. Verifica los datos.';
+      setModalError(mensaje);
+    } finally {
+      setModalSaving(false);
+    }
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedEmpresa(null);
@@ -324,6 +356,13 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
 
   const toggleVista = () => {
     setVistaGrid(prev => !prev);
+  };
+
+  // Función para abrir el modal en modo "Crear Nueva"
+  const handleCreateClick = () => {
+    setSelectedEmpresa(null); // Aseguramos que no haya empresa seleccionada
+    setModalError(null);      // Limpiamos errores previos
+    setShowModal(true);       // Mostramos la ventana emergente
   };
 
   // --- FUNCIONALIDAD DEL BOTÓN ELIMINAR ---
@@ -401,7 +440,8 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
           vistaGrid={vistaGrid}
           onVistaToggle={toggleVista}
           loggedInUser={loggedInUser}
-        />
+          onAddClick={handleCreateClick} // <--- AQUÍ MANDAS LA ORDEN
+/>
 
         {/* AQUÍ INYECTAMOS EL USUARIO Y LAS FUNCIONES A EMPRESALISTA */}
         <EmpresaLista
@@ -454,12 +494,21 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
                 </div>
               )}
 
-              {!modalError && selectedEmpresa && (
+              {/* Le quitamos el && selectedEmpresa para que cargue aunque sea nuevo */}
+              {!modalError && (
                 <EmpresaModal
-                  empresa={selectedEmpresa}
+                  empresa={selectedEmpresa } // Si es null, le pasamos un objeto vacío
                   onClose={handleCloseModal}
                   canEdit={canEdit}
-                  onSave={(changes) => handleEmpresaUpdate(selectedEmpresa.id, changes)}
+                  onSave={(changes) => {
+                    // Si ya tiene un ID, es una edición (PUT)
+                    if (selectedEmpresa && selectedEmpresa.id) {
+                      handleEmpresaUpdate(selectedEmpresa.id, changes);
+                    } else {
+                      // Si no tiene ID, es una creación (POST)
+                      handleEmpresaCreate(changes);
+                    }
+                  }}
                   saving={modalSaving}
                 />
               )}

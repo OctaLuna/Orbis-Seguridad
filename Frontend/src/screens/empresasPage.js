@@ -7,7 +7,7 @@ const EmpresasPage = ({ loggedInUser }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Validamos si tiene permisos para ver el botón de añadir
-  const isAdmin = loggedInUser?.idRol === 1 || loggedInUser?.idRol === 2;
+  const isAdmin = loggedInUser?.idRol === 1;
 
   return (
     <div className="w-full bg-background flex flex-col flex-grow" style={{ paddingTop: 'calc(var(--site-header-height) - 6rem)' }}>

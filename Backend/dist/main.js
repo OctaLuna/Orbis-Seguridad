@@ -15607,7 +15607,7 @@ let UsuariosController = class UsuariosController {
 exports.UsuariosController = UsuariosController;
 __decorate([
     (0, common_1.Get)(),
-    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)(roles_const_1.ROLES_ADMIN_SISTEMA)),
     (0, swagger_1.ApiOperation)({ summary: 'Api para obtener los usuarios (solo admins)' }),
     (0, swagger_1.ApiOkResponse)({ description: 'Respuesta en caso de obtener usuarios', type: find_all_usuarios_dto_1.FindAllUsuariosDto }),
     __param(0, (0, common_1.Res)()),
@@ -15617,7 +15617,7 @@ __decorate([
 ], UsuariosController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)(roles_const_1.ROLES_ADMIN_SISTEMA)),
     (0, swagger_1.ApiOperation)({ summary: 'Api para crear un usuario con alias @orbis.com (solo admins)' }),
     (0, swagger_1.ApiCreatedResponse)({ description: 'Usuario creado y credenciales enviadas por correo', type: common_response_dto_1.CommonResponseDto }),
     (0, swagger_1.ApiBadRequestResponse)((0, utils_1.SwaggerBadRequestCommon)()),
@@ -15630,7 +15630,15 @@ __decorate([
 ], UsuariosController.prototype, "crearUsuario", null);
 __decorate([
     (0, common_1.Patch)('cambiar-password'),
-    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.VISITANTE])),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([
+        roles_const_1.Rol.SUPERADMIN,
+        roles_const_1.Rol.ADMIN_RRHH,
+        roles_const_1.Rol.ADMIN_EMPRESAS,
+        roles_const_1.Rol.INVESTIGADOR_SENIOR,
+        roles_const_1.Rol.INVESTIGADOR_JUNIOR,
+        roles_const_1.Rol.TEMPORAL,
+        roles_const_1.Rol.VISITANTE
+    ])),
     (0, swagger_1.ApiOperation)({ summary: 'Api para que el usuario autenticado cambie su propia contraseña' }),
     (0, swagger_1.ApiOkResponse)({ description: 'Contraseña actualizada exitosamente', type: common_response_dto_1.CommonResponseDto }),
     (0, swagger_1.ApiBadRequestResponse)((0, utils_1.SwaggerBadRequestCommon)()),
@@ -15643,7 +15651,7 @@ __decorate([
 ], UsuariosController.prototype, "cambiarPassword", null);
 __decorate([
     (0, common_1.Put)(':id'),
-    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)(roles_const_1.ROLES_ADMIN_SISTEMA)),
     (0, swagger_1.ApiOperation)({ summary: 'Api para actualizar información de un usuario (solo admins)' }),
     (0, swagger_1.ApiOkResponse)({ description: 'Respuesta en caso de actualizar el usuario', type: common_response_dto_1.CommonResponseDto }),
     (0, swagger_1.ApiBadRequestResponse)((0, utils_1.SwaggerBadRequestCommon)()),
@@ -15659,7 +15667,7 @@ __decorate([
 ], UsuariosController.prototype, "updateUsuario", null);
 __decorate([
     (0, common_1.Patch)(':id/desbloquear'),
-    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)(roles_const_1.ROLES_ADMIN_SISTEMA)),
     (0, swagger_1.ApiOperation)({ summary: 'Api para desbloquear la cuenta de un usuario (solo admins)' }),
     (0, swagger_1.ApiOkResponse)({ description: 'Cuenta desbloqueada exitosamente', type: common_response_dto_1.CommonResponseDto }),
     (0, swagger_1.ApiNotFoundResponse)((0, utils_1.SwaggerNotFoundCommon)()),
@@ -15684,7 +15692,7 @@ __decorate([
 ], UsuariosController.prototype, "restaurarUsuario", null);
 __decorate([
     (0, common_1.Delete)(':id'),
-    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)(roles_const_1.ROLES_ADMIN_SISTEMA)),
     (0, swagger_1.ApiOperation)({ summary: 'Api para eliminar a un usuario (solo admins)' }),
     (0, swagger_1.ApiOkResponse)({ description: 'Respuesta en caso de eliminar un usuario', type: common_response_dto_1.CommonResponseDto }),
     (0, swagger_1.ApiBadRequestResponse)((0, utils_1.SwaggerBadRequestCommon)()),
@@ -15698,7 +15706,7 @@ __decorate([
 ], UsuariosController.prototype, "deleteUsuario", null);
 __decorate([
     (0, common_1.Get)(':id/historial-passwords'),
-    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)(roles_const_1.ROLES_ADMIN_SISTEMA)),
     (0, swagger_1.ApiOperation)({ summary: 'Obtener historial de fechas de cambio de contraseña (sin hashes)' }),
     (0, swagger_1.ApiOkResponse)({ description: 'Historial de fechas obtenido', type: common_response_dto_1.CommonResponseDto }),
     (0, swagger_1.ApiNotFoundResponse)((0, utils_1.SwaggerNotFoundCommon)()),

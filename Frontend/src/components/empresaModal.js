@@ -2,40 +2,25 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const ModalTimeline = ({ hitos = [] }) => {
-    // Si no hay hitos, no renderizamos la línea.
     if (hitos.length === 0) return null;
 
     return (
         <div className="relative w-full px-8 pt-6 pb-2 mt-4 flex items-center justify-between flex-col">
             <h3 className="text-xl font-semibold text-gray-800 mb-6">Hitos de la Empresa</h3>
-            
-            {/* Contenedor de la línea y los puntos */}
             <div className="relative w-full h-12">
-                {/* Línea Azul de Base */}
-                    <div className="absolute top-1/2 left-0 right-0 h-1 bg-[#0f2c4a] rounded-full transform -translate-y-1/2"></div>
-
-                {/* Círculos de Hitos */}
+                <div className="absolute top-1/2 left-0 right-0 h-1 bg-[#0f2c4a] rounded-full transform -translate-y-1/2"></div>
                 {hitos.map((hito, index) => {
-                    // Distribuye los puntos uniformemente a lo largo de la línea.
                     const positionPercentage = (index + 1) / (hitos.length + 1) * 100;
-                    
-                    // Tamaño del círculo (w-3 h-3) es 12px. Por lo tanto, el centrado es -6px.
-                    const circleSize = 12; // 0.75rem en Tailwind
-                    const centeringOffset = circleSize / 2; // 6px
+                    const circleSize = 12; 
+                    const centeringOffset = circleSize / 2; 
 
                     return (
                         <div
                             key={index}
                             className="absolute top-1/2 transform -translate-y-1/2"
-                            style={{ 
-                                left: `calc(${positionPercentage}% - ${centeringOffset}px)`
-                            }}
-                            // Utilizamos el div principal como el punto, replicando el estilo de la tarjeta.
+                            style={{ left: `calc(${positionPercentage}% - ${centeringOffset}px)` }}
                         >
-                            <div
-                                className="w-3 h-3 bg-white border-2 border-text-muted rounded-full shadow cursor-pointer hover:scale-150 transition-transform duration-200 relative group"
-                            >
-                                {/* Etiqueta del hito (Se muestra arriba del círculo al hacer hover) */}
+                            <div className="w-3 h-3 bg-white border-2 border-text-muted rounded-full shadow cursor-pointer hover:scale-150 transition-transform duration-200 relative group">
                                 <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 px-2 py-1 text-xs text-white bg-primary rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none z-30">
                                     {hito.nombre} ({hito.fecha})
                                 </div>
@@ -44,16 +29,13 @@ const ModalTimeline = ({ hitos = [] }) => {
                     );
                 })}
             </div>
-            
-            {/* Leyenda de Fechas: Opcional, pero útil para visualizar la progresión */}
             <div className="w-full flex justify-between px-2 text-sm text-gray-500 mt-2">
-                {/* Etiqueta de Fundación fuera del loop si es una fecha fija (como la fundación) */}
                 <span className='font-semibold'>Fundación</span>
                 {hitos.map((hito, index) => (
                     <span 
                         key={`legend-${index}`}
                         className='text-center'
-                        style={{ width: `${100 / (hitos.length + 1)}%` }} // Distribución para alinear con los puntos
+                        style={{ width: `${100 / (hitos.length + 1)}%` }} 
                     >
                         {hito.fecha}
                     </span>
@@ -63,7 +45,6 @@ const ModalTimeline = ({ hitos = [] }) => {
     );
 };
 
-// --- Componente principal del Modal ---
 const toCommaList = (items = []) => (Array.isArray(items) && items.length ? items.join(', ') : '');
 
 const EMPTY_EMPRESA = Object.freeze({
@@ -86,13 +67,11 @@ const EMPTY_EMPRESA = Object.freeze({
 });
 
 const EmpresaModal = ({ empresa, onClose, canEdit = false, onSave, saving = false }) => {
-    const currentEmpresa = empresa ?? EMPTY_EMPRESA;
-
-    useEffect(() => {
-        if (empresa) {
-            console.log('[EmpresaModal] render empresa', empresa.id);
-        }
-    }, [empresa]);
+    // 1. Detectar si es creación (nueva) o edición
+    const isNew = !empresa || Object.keys(empresa).length === 0;
+    
+    // 2. Usar EMPTY_EMPRESA si es nueva para mantener referencias estables y evitar el bucle infinito
+    const currentEmpresa = isNew ? EMPTY_EMPRESA : empresa;
 
     const {
         nombre = '',
@@ -114,6 +93,9 @@ const EmpresaModal = ({ empresa, onClose, canEdit = false, onSave, saving = fals
     } = currentEmpresa;
 
     const initialFormState = useMemo(() => ({
+        nombre: nombre || '',
+        rubro: rubro || '',
+        departamento: departamento || '',
         slogan: slogan || '',
         descripcion: descripcion || '',
         actividad: actividad || '',
@@ -123,35 +105,36 @@ const EmpresaModal = ({ empresa, onClose, canEdit = false, onSave, saving = fals
         tiposSocietarios: toCommaList(tiposSocietariosList),
         fundadores: toCommaList(fundadoresList),
         municipios: toCommaList(municipiosList),
-    }), [slogan, descripcion, actividad, direccionWeb, serviciosList, itemsList, tiposSocietariosList, fundadoresList, municipiosList]);
+    }), [nombre, rubro, departamento, slogan, descripcion, actividad, direccionWeb, serviciosList, itemsList, tiposSocietariosList, fundadoresList, municipiosList]);
 
-    const [editMode, setEditMode] = useState(false);
+    // 3. Si es una empresa nueva, abrimos directamente en modo edición
+    const [editMode, setEditMode] = useState(isNew);
     const [formData, setFormData] = useState(initialFormState);
     const [feedback, setFeedback] = useState(null);
     const [feedbackType, setFeedbackType] = useState('success');
 
     useEffect(() => {
-        setEditMode(false);
+        setEditMode(isNew);
         setFormData(initialFormState);
         setFeedback(null);
-    }, [initialFormState]);
+    }, [initialFormState, isNew]);
 
     const handleFieldChange = (field, value) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
     const parseList = (value = '') =>
-        value
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean);
+        value.split(',').map((item) => item.trim()).filter(Boolean);
 
     const handleSave = async () => {
         if (!onSave) return;
-
         setFeedback(null);
 
+        // Agregamos los campos principales al payload de guardado
         const payload = {
+            nombre: formData.nombre?.trim() || null,
+            rubro: formData.rubro?.trim() || null,
+            departamento: formData.departamento?.trim() || null,
             vision: formData.slogan?.trim() || null,
             mensaje: formData.descripcion?.trim() || null,
             actividad: formData.actividad?.trim() || null,
@@ -166,8 +149,8 @@ const EmpresaModal = ({ empresa, onClose, canEdit = false, onSave, saving = fals
         try {
             await onSave(payload);
             setFeedbackType('success');
-            setFeedback('Cambios guardados correctamente.');
-            setEditMode(false);
+            setFeedback(isNew ? 'Empresa creada correctamente.' : 'Cambios guardados correctamente.');
+            if (!isNew) setEditMode(false);
         } catch (error) {
             const backendMessage = error?.response?.data?.message;
             const message = Array.isArray(backendMessage)
@@ -178,10 +161,6 @@ const EmpresaModal = ({ empresa, onClose, canEdit = false, onSave, saving = fals
         }
     };
 
-    if (!empresa) {
-        return null;
-    }
-
     return (
         <motion.div
             className="absolute inset-0 bg-white rounded-lg p-6 shadow-xl flex flex-col items-center justify-start overflow-y-auto z-10" 
@@ -190,7 +169,6 @@ const EmpresaModal = ({ empresa, onClose, canEdit = false, onSave, saving = fals
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
         >
-            {/* Botón de Cerrar */}
             <button
                 onClick={onClose}
                 className="absolute top-4 right-4 bg-primary text-detail hover:bg-primary/90 transition-colors z-20 p-2 rounded-full"
@@ -200,7 +178,7 @@ const EmpresaModal = ({ empresa, onClose, canEdit = false, onSave, saving = fals
                 </svg>
             </button>
 
-            {canEdit && (
+            {canEdit && !isNew && (
                 <div className="absolute top-4 left-4 flex gap-3">
                     <button
                         type="button"
@@ -225,29 +203,89 @@ const EmpresaModal = ({ empresa, onClose, canEdit = false, onSave, saving = fals
                     )}
                 </div>
             )}
+
+            {isNew && (
+                 <div className="absolute top-4 left-4 flex gap-3">
+                     <button
+                        type="button"
+                        onClick={handleSave}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-semibold hover:bg-emerald-700 transition disabled:opacity-60"
+                        disabled={saving}
+                    >
+                        {saving ? 'Creando...' : 'Crear Nueva Empresa'}
+                    </button>
+                 </div>
+            )}
             
-            {/* Contenido del Modal (Scrollable) */}
             <div className="w-full max-w-lg mx-auto flex flex-col items-center">
-                {/* Cabecera */}
-                <div className="text-center mb-6 pt-4">
-                    <h2 className="text-3xl font-bold text-gray-900">{nombre}</h2>
-                    <p className="text-lg text-gray-600">{rubro}</p>
-                    <p className="text-sm text-gray-500 italic">"{slogan}"</p>
-                </div>
+                {!isNew && (
+                    <>
+                        <div className="text-center mb-6 pt-4">
+                            <h2 className="text-3xl font-bold text-gray-900">{nombre}</h2>
+                            <p className="text-lg text-gray-600">{rubro}</p>
+                            <p className="text-sm text-gray-500 italic">"{slogan}"</p>
+                        </div>
+                        
+                        <div className="w-full flex-shrink-0 mb-4 rounded-lg overflow-hidden border border-gray-200">
+                            <img
+                                src={imagen || 'https://via.placeholder.com/300.png?text=Sin+Imagen'}
+                                alt={`Logo de ${nombre}`}
+                                className="w-full h-48 object-contain bg-gray-50"
+                            />
+                        </div>
+                    </>
+                )}
                 
-                {/* Imagen/Logo */}
-                <div className="w-full flex-shrink-0 mb-4 rounded-lg overflow-hidden border border-gray-200">
-                    <img
-                        src={imagen}
-                        alt={`Logo de ${nombre}`}
-                        className="w-full h-48 object-contain bg-gray-50"
-                    />
-                </div>
-                
-                {/* Descripción y Detalles */}
+                {isNew && (
+                    <div className="text-center mb-6 pt-10">
+                        <h2 className="text-3xl font-bold text-gray-900">Registrar Nueva Empresa</h2>
+                        <p className="text-sm text-gray-500">Completa los datos a continuación</p>
+                    </div>
+                )}
+
                 <div className="w-full text-gray-700 mb-6">
                     {editMode ? (
                         <form className="w-full flex flex-col gap-4 text-left">
+                            
+                            {/* NUEVOS CAMPOS: Nombre, Rubro y Departamento */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-800 mb-1">Nombre Comercial *</label>
+                                    <input
+                                        type="text"
+                                        className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                                        value={formData.nombre}
+                                        onChange={(e) => handleFieldChange('nombre', e.target.value)}
+                                        disabled={saving}
+                                        placeholder="Ej: Orbis Seguros"
+                                    />
+                                </div>
+                                <div className="flex gap-2">
+                                    <div className="w-1/2">
+                                        <label className="block text-sm font-semibold text-gray-800 mb-1">Rubro</label>
+                                        <input
+                                            type="text"
+                                            className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                                            value={formData.rubro}
+                                            onChange={(e) => handleFieldChange('rubro', e.target.value)}
+                                            disabled={saving}
+                                            placeholder="Tecnología"
+                                        />
+                                    </div>
+                                    <div className="w-1/2">
+                                        <label className="block text-sm font-semibold text-gray-800 mb-1">Departamento</label>
+                                        <input
+                                            type="text"
+                                            className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                                            value={formData.departamento}
+                                            onChange={(e) => handleFieldChange('departamento', e.target.value)}
+                                            disabled={saving}
+                                            placeholder="La Paz"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-semibold text-gray-800 mb-1">Descripción</label>
                                 <textarea
@@ -402,7 +440,7 @@ const EmpresaModal = ({ empresa, onClose, canEdit = false, onSave, saving = fals
                     </div>
                 )}
 
-                {sedes.length > 0 && (
+                {sedes.length > 0 && !isNew && (
                     <div className="w-full mb-6">
                         <h3 className="text-lg font-semibold text-gray-800 border-t pt-4 mt-2">Sedes registradas</h3>
                         <ul className="mt-2 space-y-1 text-sm text-gray-600">
@@ -415,15 +453,14 @@ const EmpresaModal = ({ empresa, onClose, canEdit = false, onSave, saving = fals
                     </div>
                 )}
 
-                {fundadoresList.length > 0 && (
+                {fundadoresList.length > 0 && !isNew && (
                     <div className="w-full mb-6">
                         <h3 className="text-lg font-semibold text-gray-800 border-t pt-4 mt-2">Fundadores</h3>
                         <p className="text-sm text-gray-600">{fundadoresList.join(', ')}</p>
                     </div>
                 )}
 
-                {/* LÍNEA DE TIEMPO DE HITOS */}
-                <ModalTimeline hitos={empresaHitos} />
+                {!isNew && <ModalTimeline hitos={empresaHitos} />}
 
             </div>
         </motion.div>

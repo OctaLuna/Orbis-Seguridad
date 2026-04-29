@@ -1,12 +1,7 @@
-// src/components/EmpresaBuscador.js
 import React from 'react';
 
-// 1. Recibimos loggedInUser en los props
-const EmpresaBuscador = ({ busqueda, onBusquedaChange, vistaGrid, onVistaToggle, loggedInUser }) => {
+const EmpresaBuscador = ({ busqueda, onBusquedaChange, vistaGrid, onVistaToggle }) => {
     
-    // 2. Definimos la lógica de permisos: solo OSI (1) y Admin Empresas (3)
-    const puedeGestionar = loggedInUser?.idRol === 1 || loggedInUser?.idRol === 3;
-
     const ListIcon = (props) => (
         <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -36,17 +31,6 @@ const EmpresaBuscador = ({ busqueda, onBusquedaChange, vistaGrid, onVistaToggle,
             >
                 {vistaGrid ? <ListIcon className="h-6 w-6" /> : <GridIcon className="h-6 w-6" />}
             </button>
-
-            {/* 3. BOTÓN CONDICIONAL: Solo aparece si tiene el rol adecuado */}
-            {puedeGestionar && (
-                <button
-                    onClick={() => {/* Esta lógica la maneja el padre, podrías pasarle una función onAdd */}}
-                    className="flex items-center gap-2 bg-[#2C5282] text-white px-4 py-2 rounded-lg hover:bg-[#1A365D] transition-all shadow-md whitespace-nowrap ml-2"
-                >
-                    <span className="text-xl font-bold">+</span>
-                    <span className="hidden sm:inline">Añadir Nueva Empresa</span>
-                </button>
-            )}
         </div>
     );
 };
