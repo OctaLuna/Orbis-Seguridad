@@ -155,55 +155,76 @@ const RegistrationModal = ({ isOpen, onClose }) => {
     };
 
     const transformDataForApi = (data) => {
+        const anioImpacto = parseInt(data.impactInitiativeYear, 10);
+        
         return {
-            empresa: {
-                nombre_comercial: data.companyName || '',
-                fecha_fundacion: data.foundationDate || '1900-01-01',
-                vision: data.vision || '',
-                mision: data.mission || '',
-                direccion_web: data.website || '',
-                actividad: data.mainActivity || '',
-                mensaje: data.commemorativeMessage || '',
-                id_tamanio: data.companySizeId ? parseInt(data.companySizeId, 10) : 1
-            },
+            // AQUÍ ESTÁ LA MAGIA: Usamos las llaves exactas del DTO original
+            nombre: data.companyName || '',
+            fechaFundacion: data.foundationDate || '', 
+            vision: data.vision || '',
+            mision: data.mission || '',
+            direccionWeb: data.website || '',
+            actividad: data.mainActivity || '',
+            mensajeConmemorativo: data.commemorativeMessage || '',
+            tamanioEmpresa: data.companySizeId ? parseInt(data.companySizeId, 10) : 1,
+            
+            // Arrays obligatorios
             fundadores: (data.founders || []).map(f => f.name),
             servicios: (data.mainServices || []).map(s => s.name),
-            rubros: [],
-            tiposSocietarios: [],
-            sedes: [],
-            municipios: [],
-            imagenes: []
+            items: (data.mainProducts || []).map(p => p.name),
+            imagenes: [],
+            
+            // Relaciones complejas
+            familia: {
+                esFamiliar: data.isFamilyOwned,
+                anio: !data.isFamilyOwned && data.familyStatusChangeYear ? parseInt(data.familyStatusChangeYear, 10) : (data.foundationDate ? new Date(data.foundationDate).getFullYear() : 0)
+            },
+            rubros: {
+                idRubros: data.currentSector && data.currentSector !== 'OTRO' ? [{ id: parseInt(data.currentSector, 10), esActivo: true }] : [],
+                rubrosNuevos: data.currentSector === 'OTRO' && data.currentSectorOther ? [{ nombre: data.currentSectorOther, esActivo: true }] : []
+            },
+            tiposSocietarios: {
+                tiposSocietarios: data.currentCorporateType ? [{ id: parseInt(data.currentCorporateType, 10), esActivo: true, fechaCambio: data.corporateTypeChangeDate || null }] : [],
+                tiposSocietariosNuevos: []
+            },
+            sedes: (data.departments || []).map(deptName => ({
+                idDepartamento: catalogData.departments.find(d => d.nombre === deptName)?.id,
+                esSedePrincipal: data.headquarters === deptName
+            })).filter(s => s.idDepartamento),
+            municipios: (data.municipalities || []).map(muniName => catalogData.municipalities.find(m => m.nombreMunicipio === muniName)?.id).filter(id => id !== undefined),
+            paisesOperaInternacionalmente: data.hasInternationalOperations ? (data.internationalOperationsCountries || []) : [],
+            reconocimientos: [],
+            hitos: (data.milestones || []).map(m => ({ nombre: m.name, descripcion: m.description, fecha: m.startDate || null })),
+            ...(data.impactInitiative !== 'none' && {
+                implementacion: {
+                    anio: isNaN(anioImpacto) ? new Date().getFullYear() : anioImpacto,
+                    tiposAccion: [],
+                    acciones: []
+                }
+            })
         };
     };
-    
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
         setError(null);
         try {
             const apiPayload = transformDataForApi(formData);
-            const payloadFinal = new FormData();
-            Object.keys(apiPayload.empresa).forEach(key => {
-                payloadFinal.append(key, apiPayload.empresa[key]);
-            });
-            payloadFinal.append('fundadores', JSON.stringify(apiPayload.fundadores));
-            payloadFinal.append('servicios', JSON.stringify(apiPayload.servicios));
-            payloadFinal.append('rubros', JSON.stringify([]));
-            payloadFinal.append('sedes', JSON.stringify([]));
-            payloadFinal.append('municipios', JSON.stringify([]));
-
-            await apiClient.post('/api/formulario', payloadFinal);
+            // Mandamos el JSON puro, igual que el código original que sí funcionaba
+            await apiClient.post('/api/formulario', apiPayload);
             setIsSubmitted(true);
         } catch (err) {
+            console.error(err);
             setError('Ocurrió un error al registrar los datos. Revise su conexión.');
         } finally {
             setIsSubmitting(false);
         }
     };
-
     const renderStepContent = () => {
         switch (step) {
-            case 1: return (
+            case 1: 
+                return (
                 <div className="space-y-4"> 
                     <h3 className="text-lg font-semibold text-slate-800">Identidad de la Empresa</h3> 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> 
@@ -217,19 +238,150 @@ const RegistrationModal = ({ isOpen, onClose }) => {
                             <option value="" disabled>Seleccione un tamaño</option> 
                             {catalogData.companySizes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)} 
                         </FormSelect> 
-                        <div className="md:col-span-2"> 
-                            <DynamicListInput label="Fundadores" placeholder="Nombre del fundador" list={formData.founders} setList={list => setFormData(p => ({ ...p, founders: list }))} /> 
-                        </div> 
                     </div> 
                 </div>
             );
-            case 2: return <div className="space-y-4"><h3 className="text-lg font-semibold">Perfil de Negocio</h3><p className="text-slate-500">Formulario en construcción...</p></div>;
-            case 3: return <div className="space-y-4"><h3 className="text-lg font-semibold">Visión y Misión</h3><p className="text-slate-500">Formulario en construcción...</p></div>;
-            case 4: return <div className="space-y-4"><h3 className="text-lg font-semibold">Alcance Operativo</h3><p className="text-slate-500">Formulario en construcción...</p></div>;
-            case 5: return <div className="space-y-4"><h3 className="text-lg font-semibold">Legado</h3><p className="text-slate-500">Formulario en construcción...</p></div>;
-            case 6: return <div className="space-y-4"><h3 className="text-lg font-semibold">Impacto</h3><p className="text-slate-500">Formulario en construcción...</p></div>;
-            case 7: return <div className="space-y-4"><h3 className="text-lg font-semibold">Archivos</h3><p className="text-slate-500">Formulario en construcción...</p></div>;
-            default: return null;
+            case 2: 
+                return (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-slate-800">Perfil de Negocio</h3>
+                    <FormSelect label="Rubro Actual" name="currentSector" value={formData.currentSector} onChange={handleFormChange}>
+                        <option value="" disabled>Seleccione un rubro</option>
+                        {catalogData.sectors.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                        <option value="OTRO">Otro (especificar)</option>
+                    </FormSelect>
+                    {formData.currentSector === 'OTRO' && (
+                        <FormInput label="Especifique su rubro" name="currentSectorOther" value={formData.currentSectorOther} onChange={handleFormChange} />
+                    )}
+                    <FormSelect label="Tipo Societario Actual" name="currentCorporateType" value={formData.currentCorporateType} onChange={handleFormChange}>
+                        <option value="" disabled>Seleccione un tipo</option>
+                        {catalogData.corporateTypes.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                    </FormSelect>
+                    <DynamicListInput label="Principales Productos" placeholder="Producto" list={formData.mainProducts} setList={l => setFormData(p => ({...p, mainProducts: l}))} maxItems={5} />
+                    <DynamicListInput label="Principales Servicios" placeholder="Servicio" list={formData.mainServices} setList={l => setFormData(p => ({...p, mainServices: l}))} maxItems={5} />
+                </div>
+            );
+            case 3: 
+                return (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-slate-800">Visión y Misión</h3>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-500 mb-1">Visión</label>
+                        <textarea name="vision" rows="3" value={formData.vision} onChange={handleFormChange} className="w-full bg-white border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-500 mb-1">Misión</label>
+                        <textarea name="mission" rows="3" value={formData.mission} onChange={handleFormChange} className="w-full bg-white border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                    <FormInput label="Dirección Web" name="website" type="url" value={formData.website} onChange={handleFormChange} placeholder="https://www..." />
+                </div>
+            );
+            case 4: 
+                return (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-slate-800">Alcance Operativo</h3>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-500 mb-2">Departamentos donde opera</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {catalogData.departments.map(dept => (
+                                <label key={dept.id} className="flex items-center space-x-2">
+                                    <input type="checkbox" checked={(formData.departments || []).includes(dept.nombre)} onChange={(e) => {
+                                        const newDepts = e.target.checked 
+                                            ? [...(formData.departments || []), dept.nombre]
+                                            : (formData.departments || []).filter(d => d !== dept.nombre);
+                                        setFormData(p => ({...p, departments: newDepts}));
+                                    }} className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4" />
+                                    <span className="text-sm text-slate-700">{dept.nombre}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                    {(formData.departments || []).length > 0 && (
+                        <div className="pt-4 border-t border-slate-200">
+                            <label className="block text-sm font-medium text-slate-500 mb-2">Sede Central (Seleccione una)</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {formData.departments.map(dept => (
+                                    <label key={dept} className="flex items-center space-x-2">
+                                        <input type="radio" name="headquarters" value={dept} checked={formData.headquarters === dept} onChange={handleFormChange} className="text-blue-600 focus:ring-blue-500 w-4 h-4" />
+                                        <span className="text-sm text-slate-700">{dept}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+            case 5: 
+                return (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-slate-800">Legado e Hitos</h3>
+                    <button type="button" onClick={() => setFormData(p => ({...p, milestones: [...p.milestones, {id: Date.now(), name: '', description: '', startDate: ''}]}))} className="text-sm bg-blue-100 text-blue-700 font-bold py-2 px-4 rounded-md hover:bg-blue-200 transition-colors">
+                        + Añadir Hito Histórico
+                    </button>
+                    {formData.milestones.map(m => (
+                        <div key={m.id} className="p-4 border border-slate-200 bg-white rounded-md relative space-y-3">
+                            <button type="button" onClick={() => setFormData(p => ({...p, milestones: p.milestones.filter(x => x.id !== m.id)}))} className="absolute top-2 right-2 p-1 text-red-500 hover:bg-red-50 rounded">✕</button>
+                            <FormInput label="Nombre del Hito" value={m.name} onChange={(e) => setFormData(p => ({...p, milestones: p.milestones.map(x => x.id === m.id ? {...x, name: e.target.value} : x)}))} />
+                            <FormInput label="Fecha" type="date" value={m.startDate} onChange={(e) => setFormData(p => ({...p, milestones: p.milestones.map(x => x.id === m.id ? {...x, startDate: e.target.value} : x)}))} />
+                            <div>
+                                <label className="block text-sm font-medium text-slate-500 mb-1">Descripción</label>
+                                <textarea value={m.description} onChange={(e) => setFormData(p => ({...p, milestones: p.milestones.map(x => x.id === m.id ? {...x, description: e.target.value} : x)}))} rows="2" className="w-full bg-white border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 outline-none" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+            case 6: 
+                return (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-slate-800">Impacto Social</h3>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-500 mb-2">¿Implementa acciones de RSE o Sostenibilidad?</label>
+                        <div className="flex flex-col space-y-3 bg-white p-4 border border-slate-200 rounded-md">
+                            {['none', 'social', 'sustainability', 'both'].map(val => (
+                                <label key={val} className="flex items-center space-x-2 cursor-pointer">
+                                    <input type="radio" name="impactInitiative" value={val} checked={formData.impactInitiative === val} onChange={handleFormChange} className="w-4 h-4 text-blue-600" />
+                                    <span className="text-slate-700">{val === 'none' ? 'Ninguna' : val === 'social' ? 'Responsabilidad Social' : val === 'sustainability' ? 'Sostenibilidad' : 'Ambas'}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+                    {formData.impactInitiative !== 'none' && (
+                        <div className="pt-2">
+                            <label className="block text-sm font-medium text-slate-500 mb-2">Seleccione Objetivos de Desarrollo Sostenible (ODS)</label>
+                            <div className="max-h-48 overflow-y-auto space-y-2 bg-slate-50 p-3 rounded-md border border-slate-200">
+                                {catalogData.acciones.map(acc => (
+                                    <label key={acc.id_accion} className="flex items-center space-x-2 cursor-pointer">
+                                        <input type="checkbox" checked={(formData.selectedSdgs || []).includes(acc.id_accion)} onChange={(e) => {
+                                            const newSdgs = e.target.checked 
+                                                ? [...(formData.selectedSdgs || []), acc.id_accion]
+                                                : (formData.selectedSdgs || []).filter(id => id !== acc.id_accion);
+                                            setFormData(p => ({...p, selectedSdgs: newSdgs}));
+                                        }} className="w-4 h-4 text-blue-600 rounded" />
+                                        <span className="text-sm text-slate-700">{acc.nombre}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+            case 7: 
+                return (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-slate-800">Archivos y Mensaje Final</h3>
+                    <div className="bg-white p-4 border border-slate-200 rounded-md">
+                        <label className="block text-sm font-medium text-slate-500 mb-2">Logo / Imágenes (Opcional)</label>
+                        <input type="file" multiple className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" onChange={(e) => setFormData(p => ({...p, files: Array.from(e.target.files)}))} />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-500 mb-1">Mensaje Conmemorativo</label>
+                        <textarea name="commemorativeMessage" rows="4" value={formData.commemorativeMessage} onChange={handleFormChange} className="w-full bg-white border border-slate-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Escriba un mensaje sobre el legado de su empresa..." />
+                    </div>
+                </div>
+            );
+            default:
+                return null;
         }
     };
 
