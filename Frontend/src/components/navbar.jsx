@@ -2,7 +2,9 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
-const ROLES_CON_PANEL = new Set([1, 2]);
+const ROLES_PANEL_USUARIOS = new Set([1, 2]);
+const ROLES_PANEL_EMPRESAS = new Set([1, 3]);
+const ROLES_PANEL_DASHBOARDS = new Set([1, 2]);
 
 const Navbar = ({ loggedInUser, isMobileMenuOpen, toggleMobileMenu }) => {
   const location = useLocation();
@@ -19,8 +21,13 @@ const Navbar = ({ loggedInUser, isMobileMenuOpen, toggleMobileMenu }) => {
   ];
 
   let finalLinks = [...baseLinks];
-  if (loggedInUser && ROLES_CON_PANEL.has(loggedInUser.idRol)) {
+  if (loggedInUser && ROLES_PANEL_USUARIOS.has(loggedInUser.idRol)) {
     finalLinks.push({ label: "ADMIN USUARIOS", path: "/panel-usuarios" });
+  }
+  if (loggedInUser && ROLES_PANEL_EMPRESAS.has(loggedInUser.idRol)) {
+    finalLinks.push({ label: "ADMIN EMPRESAS", path: "/admin-empresas" });
+  }
+  if (loggedInUser && ROLES_PANEL_DASHBOARDS.has(loggedInUser.idRol)) {
     finalLinks.push({ label: "DASHBOARDS", path: "/dashboards" });
   }
 

@@ -9,6 +9,7 @@ import ContactoPage from '../screens/contactoPage';
 import HistoriaPage from '../screens/historiaPage';
 import EquipoPage from '../screens/equipoPage.js';
 import EditorEmpresasPage from '../screens/editorEmpresasPage';
+import AdminEmpresasDashboard from './AdminEmpresasDashboard.jsx';
 import AdministrarUsuarioPanel from './administrarUsuarioPanel';
 import CambiarPasswordPage from '../screens/cambiarPasswordPage.jsx';
 import ResetPasswordPage from '../screens/resetPasswordPage.jsx';
@@ -71,8 +72,9 @@ function App() {
   }, []);
 
   const loggedInUser = authState?.user ?? null;
-  // Acceso admin: SUPERADMIN=1, ADMIN_RRHH=2 para usuarios; +ADMIN_EMPRESAS=3 para empresas
+  // Acceso admin: SUPERADMIN=1, ADMIN_RRHH=2 para usuarios; ADMIN_EMPRESAS=3 para gestión de empresas
   const canAccessAdmin = loggedInUser && loggedInUser.idRol <= 3;
+  const canAccessAdminEmpresas = loggedInUser && [1, 3].includes(loggedInUser.idRol);
   const canManageUsers = loggedInUser && loggedInUser.idRol <= 2;
 
   return (
@@ -130,6 +132,19 @@ function App() {
               element={
                 canAccessAdmin ? (
                   <EditorEmpresasPage />
+                ) : (
+                  <div className="p-12 text-center text-accent font-bold">
+                    No tienes permisos para acceder a esta página.
+                  </div>
+                )
+              }
+            />
+
+            <Route
+              path="/admin-empresas"
+              element={
+                canAccessAdminEmpresas ? (
+                  <AdminEmpresasDashboard />
                 ) : (
                   <div className="p-12 text-center text-accent font-bold">
                     No tienes permisos para acceder a esta página.

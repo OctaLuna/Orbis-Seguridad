@@ -122,6 +122,7 @@ const FORM_INICIAL = {
   apellidoMaterno: '',
   correoReal: '',
   tipoRol: '',
+  confirmoDatos: false,
   permisos: {
     panelUsuarios: false,
     editarEmpresas: false,
@@ -406,6 +407,8 @@ const AdministrarUsuarioPanel = () => {
     if (!form.tipoRol)                errs.push('Debes seleccionar un tipo de usuario');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correoReal))
       errs.push('El correo personal no tiene un formato válido');
+    if (!form.confirmoDatos)
+      errs.push('Debes confirmar que ingresaste correctamente tus datos');
     if (form.tipoRol === 'admin' &&
         !form.permisos.panelUsuarios &&
         !form.permisos.editarEmpresas &&
@@ -1027,6 +1030,18 @@ const AdministrarUsuarioPanel = () => {
                 <p className="text-xs text-gray-400 font-miles mt-1">
                   📧 La contraseña temporal se enviará a este correo. No será visible en la plataforma.
                 </p>
+
+                <label className="mt-4 flex items-start gap-3 rounded-xl border border-[#D4B86A] bg-white px-4 py-3 text-sm text-[#333333]">
+                  <input
+                    type="checkbox"
+                    checked={form.confirmoDatos}
+                    onChange={(e) => setField('confirmoDatos', e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-[#BFAEA4] text-[#2C5282] focus:ring-[#2C5282]"
+                  />
+                  <span>
+                    Confirmo que ingresé correctamente mis datos y deseo crear el usuario.
+                  </span>
+                </label>
               </div>
 
               {/* Resumen final */}

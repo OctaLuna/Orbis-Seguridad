@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Permite configurar la URL del backend mediante una variable de entorno
-const baseURL = process.env.REACT_APP_API_URL || 'https://orbis-seguridad.onrender.com';
+const baseURL = process.env.VITE_API_URL || process.env.REACT_APP_API_URL || 'https://orbis-seguridad.onrender.com';
 
 const API = axios.create({
   baseURL,

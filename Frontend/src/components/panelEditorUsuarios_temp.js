@@ -98,6 +98,7 @@ const PanelEditorUsuarios = () => {
   const [nuevaContrasenia, setNuevaContrasenia] = useState("");
   const [nuevoCorreo, setNuevoCorreo] = useState("");
   const [nuevoRol, setNuevoRol] = useState(3);
+  const [confirmoDatos, setConfirmoDatos] = useState(false);
   const [mensaje, setMensaje] = useState(null); // Para mensajes de error o validación dentro del modal de registro
 
   // Estados para la alerta de éxito de registro
@@ -168,6 +169,11 @@ const PanelEditorUsuarios = () => {
       return;
     }
 
+    if (!confirmoDatos) {
+      setMensaje("Debes confirmar que ingresaste correctamente los datos.");
+      return;
+    }
+
     setMensaje(null); // Limpiar mensaje de error previo
 
     try {
@@ -185,6 +191,7 @@ const PanelEditorUsuarios = () => {
       setNuevaContrasenia("");
       setNuevoCorreo("");
       setNuevoRol(3);
+      setConfirmoDatos(false);
       cargarUsuarios();
     } catch (error) {
       console.error("Error registrando usuario:", error);
@@ -444,6 +451,19 @@ const PanelEditorUsuarios = () => {
                 onChange={(e) => setNuevoCorreo(e.target.value)}
                 variants={itemVariants}
               />
+
+              <label className="mb-4 flex items-start gap-3 rounded-xl border border-[#D4B86A] bg-white px-4 py-3 text-sm text-[#333333]">
+                <input
+                  type="checkbox"
+                  checked={confirmoDatos}
+                  onChange={(e) => setConfirmoDatos(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-[#BFAEA4] text-[#2C5282] focus:ring-[#2C5282]"
+                />
+                <span>
+                  Confirmo que ingresé correctamente mis datos y deseo crear el usuario.
+                </span>
+              </label>
+
               <motion.select
                 className={`${inputStyle} bg-white`}
                 value={nuevoRol}
@@ -466,6 +486,7 @@ const PanelEditorUsuarios = () => {
                     setNuevaContrasenia("");
                     setNuevoCorreo("");
                     setNuevoRol(3);
+                    setConfirmoDatos(false);
                     setMensaje(null);
                   }}
                   className="flex-1 bg-[#D4B86A] text-white py-2 rounded-md hover:bg-[#1D4C7F] transition-colors duration-200"
