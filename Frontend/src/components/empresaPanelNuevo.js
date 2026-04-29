@@ -64,6 +64,7 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
 
   const shouldFallbackToPublic = useCallback((error) => {
     const status = error?.response?.status;
+    // Agregamos el 403 aquí para que si falla lo privado, cargue lo público
     if (status === 401 || status === 403) return true;
 
     const code = error?.code;
@@ -106,9 +107,10 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
         });
       } catch (primaryError) {
         debugLog('Error al obtener tarjetas en primera llamada', primaryError);
-        if (canViewPrivate && primaryError?.response?.status === 401) {
+        // Si es 401 O 403, intentamos cargar las públicas
+        if (canViewPrivate && (primaryError?.response?.status === 401 || primaryError?.response?.status === 403)) {
           cards = await getEmpresasCards({ limit: 100 }, 'public');
-          debugLog('Recuperado tarjetas públicas tras 401', { cantidad: cards.length });
+          debugLog('Recuperado tarjetas públicas tras error de permisos', { cantidad: cards.length });
         } else {
           throw primaryError;
         }
@@ -398,6 +400,7 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
           onBusquedaChange={handleBusquedaChange}
           vistaGrid={vistaGrid}
           onVistaToggle={toggleVista}
+          loggedInUser={loggedInUser}
         />
 
         {/* AQUÍ INYECTAMOS EL USUARIO Y LAS FUNCIONES A EMPRESALISTA */}

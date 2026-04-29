@@ -3,26 +3,32 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 
 export const AuthRolesGuard = (roles: number[]): Type<CanActivate> => {
-	@Injectable()
-	class MixinAuthRolesGuard extends AuthGuard('jwt') {
-		constructor(private reflector: Reflector) {
-			super();
-		}
+    @Injectable()
+    class MixinAuthRolesGuard extends AuthGuard('jwt') {
+        constructor(private reflector: Reflector) {
+            super();
+        }
 
-		async canActivate(context: ExecutionContext): Promise<boolean> {
-			const jwtValid = (await super.canActivate(context)) as boolean;
-			if (!jwtValid) return false;
-			const { user } = context.switchToHttp().getRequest();
-			if (!roles || roles.length === 0) return true;
-			const isAllowed = roles.some((rol) => Number(user.rol) <= rol);
-			if (!isAllowed) {
-				throw new ForbiddenException({
-					message: 'No tiene permiso'
-				});
-			}
-			return true
-		}
-	}
+        async canActivate(context: ExecutionContext): Promise<boolean> {
+            const jwtValid = (await super.canActivate(context)) as boolean;
+            if (!jwtValid) return false;
 
-	return mixin(MixinAuthRolesGuard);
+            const { user } = context.switchToHttp().getRequest();
+            if (!roles || roles.length === 0) return true;
+
+            // --- CORRECCIÓN AQUÍ ---
+            // Usamos .includes para verificar que el rol esté en la lista permitida
+            const isAllowed = roles.includes(Number(user.rol));
+            // -----------------------
+
+            if (!isAllowed) {
+                throw new ForbiddenException({
+                    message: 'No tiene permiso para realizar esta acción'
+                });
+            }
+            return true;
+        }
+    }
+
+    return mixin(MixinAuthRolesGuard);
 };

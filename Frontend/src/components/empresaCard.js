@@ -22,14 +22,14 @@ const CardTimeline = ({ hitos = [] }) => {
     );
 };
 
-// Añadimos loggedInUser, onEdit y onDelete a las props
 const EmpresaCard = ({ empresa, onClick, isGrid, loggedInUser, onEdit, onDelete }) => {
     const cardLayoutClasses = isGrid ? "flex-col" : "flex-col sm:flex-row";
     const imageContainerClasses = isGrid ? "h-32 w-full flex-shrink-0" : "h-32 w-full sm:w-48 flex-shrink-0";
     const empresaHitos = empresa.hitos || []; 
 
-    // Verificamos si es administrador (Roles 1 y 2)
-    const isAdmin = loggedInUser?.idRol === 1 || loggedInUser?.idRol === 2;
+    // --- CORRECCIÓN DE SEGURIDAD ---
+    // Solo permitimos gestionar a OSI (1) y Administrador de Empresas (3)
+    const puedeGestionar = loggedInUser?.idRol === 1 || loggedInUser?.idRol === 3;
 
     return (
         <motion.div
@@ -39,8 +39,8 @@ const EmpresaCard = ({ empresa, onClick, isGrid, loggedInUser, onEdit, onDelete 
             animate={{ opacity: 1, y: 0 }}
             onClick={() => onClick(empresa)}
         >
-            {/* BOTONES DE ADMINISTRADOR FLOTANTES */}
-            {isAdmin && (
+            {/* BOTONES DE GESTIÓN: Solo se renderizan si el rol es autorizado */}
+            {puedeGestionar && (
                 <div className="absolute top-2 right-2 z-10 flex gap-2">
                     <button
                         onClick={(e) => { e.stopPropagation(); onEdit(empresa); }}

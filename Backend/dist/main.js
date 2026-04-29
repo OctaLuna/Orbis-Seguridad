@@ -630,10 +630,10 @@ const AuthRolesGuard = (roles) => {
             const { user } = context.switchToHttp().getRequest();
             if (!roles || roles.length === 0)
                 return true;
-            const isAllowed = roles.some((rol) => Number(user.rol) <= rol);
+            const isAllowed = roles.includes(Number(user.rol));
             if (!isAllowed) {
                 throw new common_1.ForbiddenException({
-                    message: 'No tiene permiso'
+                    message: 'No tiene permiso para realizar esta acción'
                 });
             }
             return true;
@@ -5687,23 +5687,23 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], EmpresasController.prototype, "findOnePrivate", null);
 __decorate([
-    Put('private/:idEmpresa'),
-    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_EMPRESAS])),
+    (0, common_1.Put)('private/:idEmpresa'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)(roles_const_1.ROLES_ADMIN_EMPRESAS)),
     (0, swagger_1.ApiOperation)({
         summary: 'Api para actualizar/editar los datos de una empresa',
     }),
     (0, swagger_1.ApiOkResponse)({ description: 'Empresa actualizada exitosamente' }),
     (0, swagger_1.ApiNotFoundResponse)((0, utils_1.SwaggerNotFoundCommon)()),
     __param(0, (0, common_1.Param)('idEmpresa', common_1.ParseIntPipe)),
-    __param(1, Body()),
+    __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Res)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, Object, typeof (_j = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _j : Object]),
     __metadata("design:returntype", Promise)
 ], EmpresasController.prototype, "updateEmpresaPrivate", null);
 __decorate([
-    Delete(':idEmpresa'),
-    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_EMPRESAS])),
+    (0, common_1.Delete)(':idEmpresa'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)(roles_const_1.ROLES_ADMIN_EMPRESAS)),
     (0, swagger_1.ApiOperation)({
         summary: 'Api para eliminar o dar de baja una empresa',
     }),
@@ -15456,6 +15456,59 @@ let EmpresasService = class EmpresasService {
         }
         const data = await this.findOne(idEmpresa, empresa_private_template_1.EmpresaPrivateTemplateSelect, empresa_private_template_1.EmpresaPrivateTemplateRelations);
         return data;
+    }
+    async updateEmpresa(idEmpresa, data) {
+        await this.findOne(idEmpresa);
+        const camposBasicos = {};
+        if (data.nombreComercial !== undefined)
+            camposBasicos.nombreComercial = data.nombreComercial;
+        if (data.vision !== undefined)
+            camposBasicos.vision = data.vision;
+        if (data.mision !== undefined)
+            camposBasicos.mision = data.mision;
+        if (data.actividad !== undefined)
+            camposBasicos.actividad = data.actividad;
+        if (data.direccionWeb !== undefined)
+            camposBasicos.direccionWeb = data.direccionWeb;
+        if (data.mensaje !== undefined)
+            camposBasicos.mensaje = data.mensaje;
+        if (Object.keys(camposBasicos).length > 0) {
+            await this.empresaRepository.update(idEmpresa, camposBasicos);
+        }
+        return await this.findOnePrivate(idEmpresa);
+    }
+    async deleteEmpresa(idEmpresa) {
+        await this.findOne(idEmpresa);
+        await this.empresaRepository.manager.transaction(async (transactionManager) => {
+            await transactionManager.query(`DELETE FROM "proyectos" 
+                 WHERE "id_implementacion_accion" IN (
+                    SELECT "id_implementacion_accion" FROM "implementaciones_acciones" 
+                    WHERE "id_implementacion" IN (
+                        SELECT "id_implementacion" FROM "implementaciones" WHERE "id_empresa" = $1
+                    )
+                 )`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "tipos_acciones_implementaciones" 
+                 WHERE "id_implementacion" IN (
+                    SELECT "id_implementacion" FROM "implementaciones" WHERE "id_empresa" = $1
+                 )`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "implementaciones_acciones" 
+                 WHERE "id_implementacion" IN (
+                    SELECT "id_implementacion" FROM "implementaciones" WHERE "id_empresa" = $1
+                 )`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "municipios_empresas" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "premios" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "implementaciones" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "familias" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "fundadores" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "hitos" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "imagenes" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "sedes" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "items" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "servicios" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "investigador_empresa" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "empresas" WHERE "id_empresa" = $1`, [idEmpresa]);
+        });
+        return true;
     }
 };
 exports.EmpresasService = EmpresasService;

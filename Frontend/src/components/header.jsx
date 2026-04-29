@@ -112,7 +112,10 @@ function Header({ loggedInUser, onLogout, onLogin, toggleMobileMenu }) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                {loggedInUser.usuario} ({getRoleName(loggedInUser.idRol)})
+                {loggedInUser.idRol === 1 || loggedInUser.usuario?.toLowerCase() === 'superadmin'
+                  ? 'OSI (Oficial de Seguridad de la Información)'
+                  : `${loggedInUser.usuario} (${getRoleName(loggedInUser.idRol)})`
+                }
               </motion.span>
 
               <motion.button

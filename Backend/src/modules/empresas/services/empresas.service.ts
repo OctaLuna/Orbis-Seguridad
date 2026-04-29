@@ -323,4 +323,97 @@ export class EmpresasService {
 		const data = await this.findOne(idEmpresa, EmpresaPrivateTemplateSelect, EmpresaPrivateTemplateRelations);
 		return data;
 	}
+
+	// =========================================================
+    // MÉTODOS PARA EDITAR Y ELIMINAR (DEFINITIVOS TYPEORM)
+    // =========================================================
+
+    async updateEmpresa(idEmpresa: number, data: any) {
+        // 1. Verificamos que la empresa exista (si no, lanza el EmpresaNotFoundException)
+        await this.findOne(idEmpresa);
+
+        // 2. Filtramos solo los campos principales que se pueden actualizar directo en la tabla
+        // (Actualizar relaciones/arrays requiere borrar e insertar en tablas pivot, por ahora blindamos los textos)
+        const camposBasicos: any = {};
+        
+        if (data.nombreComercial !== undefined) camposBasicos.nombreComercial = data.nombreComercial;
+        if (data.vision !== undefined) camposBasicos.vision = data.vision;
+        if (data.mision !== undefined) camposBasicos.mision = data.mision;
+        if (data.actividad !== undefined) camposBasicos.actividad = data.actividad;
+        if (data.direccionWeb !== undefined) camposBasicos.direccionWeb = data.direccionWeb;
+        if (data.mensaje !== undefined) camposBasicos.mensaje = data.mensaje;
+
+        // 3. Si hay campos básicos que actualizar, le decimos a TypeORM que haga el UPDATE
+        if (Object.keys(camposBasicos).length > 0) {
+            await this.empresaRepository.update(idEmpresa, camposBasicos);
+        }
+
+        // 4. Retornamos la empresa actualizada fresca desde la base de datos
+        return await this.findOnePrivate(idEmpresa);
+    }
+
+    async deleteEmpresa(idEmpresa: number) {
+        // 1. Verificamos que exista
+        await this.findOne(idEmpresa);
+
+        // 2. Usamos el QueryRunner/Manager para borrar en cadena
+        await this.empresaRepository.manager.transaction(async (transactionManager) => {
+            
+            // --- FASE 0: LIMPIEZA DE DEPENDENCIAS DE 3ER NIVEL (Bisnietos) ---
+            await transactionManager.query(
+                `DELETE FROM "proyectos" 
+                 WHERE "id_implementacion_accion" IN (
+                    SELECT "id_implementacion_accion" FROM "implementaciones_acciones" 
+                    WHERE "id_implementacion" IN (
+                        SELECT "id_implementacion" FROM "implementaciones" WHERE "id_empresa" = $1
+                    )
+                 )`, 
+                [idEmpresa]
+            );
+
+            // --- FASE 1: LIMPIEZA DE DEPENDENCIAS DE 2DO NIVEL (Nietos) ---
+            await transactionManager.query(
+                `DELETE FROM "tipos_acciones_implementaciones" 
+                 WHERE "id_implementacion" IN (
+                    SELECT "id_implementacion" FROM "implementaciones" WHERE "id_empresa" = $1
+                 )`, 
+                [idEmpresa]
+            );
+
+            await transactionManager.query(
+                `DELETE FROM "implementaciones_acciones" 
+                 WHERE "id_implementacion" IN (
+                    SELECT "id_implementacion" FROM "implementaciones" WHERE "id_empresa" = $1
+                 )`, 
+                [idEmpresa]
+            );
+
+            // --- FASE 2: LIMPIEZA DE DEPENDENCIAS PRINCIPALES (Hijos) ---
+            
+            // Los que ya confirmamos que estorban:
+            await transactionManager.query(`DELETE FROM "municipios_empresas" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "premios" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "implementaciones" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "familias" WHERE "id_empresa" = $1`, [idEmpresa]);
+            
+            // Ataque preventivo: Barremos con todos los demás hijos directos por si acaso
+            await transactionManager.query(`DELETE FROM "fundadores" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "hitos" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "imagenes" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "sedes" WHERE "id_empresa" = $1`, [idEmpresa]);
+            //await transactionManager.query(`DELETE FROM "rubros_empresa" WHERE "id_empresa" = $1`, [idEmpresa]);
+            //await transactionManager.query(`DELETE FROM "tipos_societarios_empresa" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "items" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "servicios" WHERE "id_empresa" = $1`, [idEmpresa]);
+            await transactionManager.query(`DELETE FROM "investigador_empresa" WHERE "id_empresa" = $1`, [idEmpresa]);
+
+            // --- FASE 3: ELIMINACIÓN FINAL (Jefe) ---
+            await transactionManager.query(
+                `DELETE FROM "empresas" WHERE "id_empresa" = $1`, 
+                [idEmpresa]
+            );
+        });
+
+        return true;
+    }
 }
