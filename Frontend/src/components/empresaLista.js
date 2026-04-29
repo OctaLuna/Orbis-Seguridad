@@ -3,9 +3,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EmpresaCard from './empresaCard'; 
-import LoadingSpinner from './LoadingSpinner'; // Import the new component
+import LoadingSpinner from './LoadingSpinner';
 
-const EmpresaLista = ({ empresas, loading, error, vistaGrid, onCardClick }) => {
+// 1. Añadimos loggedInUser, onEdit y onDelete aquí arriba
+const EmpresaLista = ({ empresas, loading, error, vistaGrid, onCardClick, loggedInUser, onEdit, onDelete }) => {
     const gridContainerClass = vistaGrid 
         ? "grid grid-cols-1 sm:grid-cols-2 gap-4" // Vista Cuadrícula
         : "grid gap-4"; // Vista Lista 
@@ -32,7 +33,11 @@ const EmpresaLista = ({ empresas, loading, error, vistaGrid, onCardClick }) => {
                                 key={e.id} 
                                 empresa={e} 
                                 onClick={onCardClick}
-                                isGrid={vistaGrid} // Pasamos el estado de vista a la Card para ajustar su layout interno
+                                isGrid={vistaGrid}
+                                // 2. Y se las pasamos a la tarjeta para que pinte los botones
+                                loggedInUser={loggedInUser}
+                                onEdit={onEdit}
+                                onDelete={onDelete}
                             />
                         ))
                     ) : (

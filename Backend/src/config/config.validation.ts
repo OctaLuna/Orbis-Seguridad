@@ -30,9 +30,9 @@ export const validationSchema = Joi.object({
     JWT_SECRET: Joi.string().required(),
     JWT_TIME_EXPIRE: Joi.string().required(),
 
-    // Email (Gmail SMTP)
-    USER_EMAIL: Joi.string().email().required(),
-    PASS_AUTH:  Joi.string().required(),
+    // Email (Gmail SMTP) — opcionales; sin ellos los correos fallan silenciosamente
+    USER_EMAIL: Joi.string().email().optional(),
+    PASS_AUTH:  Joi.string().optional(),
 
     // Seguridad de contraseñas
     PASSWORD_EXPIRY_DAYS:        Joi.number().default(60),

@@ -329,7 +329,6 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
       <div className="w-full md:flex-1 bg-gray-100 rounded-lg p-4 shadow-md flex flex-col h-full">
         <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <h2 className="text-2xl font-bold">Empresas por Departamento</h2>
-          {/* EL BOTÓN DE ACTUALIZAR FUE ELIMINADO */}
         </div>
 
         <div className="w-full h-[68%] flex-shrink-0">
@@ -338,9 +337,7 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
             selectedDepartamentos={departamentosActivos}
           />
         </div>
-        <div className="flex-grow">
-          {/* Información adicional o vacío */}
-        </div>
+        <div className="flex-grow"></div>
       </div>
 
       {/* Columna Derecha: Buscador y Empresas */}
@@ -352,12 +349,16 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
           onVistaToggle={toggleVista}
         />
 
+        {/* AQUÍ INYECTAMOS EL USUARIO Y LAS FUNCIONES A EMPRESALISTA */}
         <EmpresaLista
           empresas={empresas}
           loading={loading}
           error={error}
           vistaGrid={vistaGrid}
           onCardClick={handleCardClick}
+          loggedInUser={loggedInUser}
+          onEdit={(empresa) => console.log("Clic en Editar:", empresa.nombre)}
+          onDelete={(empresa) => console.log("Clic en Eliminar:", empresa.nombre)}
         />
       </div>
     </div>

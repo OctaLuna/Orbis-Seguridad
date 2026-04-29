@@ -14,7 +14,7 @@ export const AuthRolesGuard = (roles: number[]): Type<CanActivate> => {
 			if (!jwtValid) return false;
 			const { user } = context.switchToHttp().getRequest();
 			if (!roles || roles.length === 0) return true;
-			const isAllowed = roles.some((rol) => user.rol <= rol);
+			const isAllowed = roles.some((rol) => Number(user.rol) <= rol);
 			if (!isAllowed) {
 				throw new ForbiddenException({
 					message: 'No tiene permiso'

@@ -36,10 +36,14 @@ export class UsuariosService {
             select: {
                 id: true,
                 usuario: true,
+                nombre: true,
+                apellido: true,
                 correo: true,
                 idRol: true,
-                expiracion: true
-            }
+                isLocked: true,
+                failedAttempts: true,
+                expiracion: true,
+            },
         });
         return usuario;
     }
@@ -128,6 +132,10 @@ export class UsuariosService {
             resetToken:         undefined,
             resetTokenExpires:  undefined,
         });
+    }
+
+    async restaurar(id: number): Promise<void> {
+        await this.usuarioRepository.restore({ id });
     }
 
     async desbloquearCuenta(id: number): Promise<void> {

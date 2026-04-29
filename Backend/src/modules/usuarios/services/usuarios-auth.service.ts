@@ -70,10 +70,6 @@ export class UsuariosAuthService {
             entity!.usuario = data.usuario;
         }
 
-        if (data.contrasenia) {
-            entity!.contrasenia = await hashPassword(data.contrasenia);
-        }
-
         if (data.correo && data.correo !== entity!.correo) {
             const repeatedEmail = await this.usuariosService.findOneByCorreo(data.correo, { throwException: false });
             if (repeatedEmail && repeatedEmail.id !== id) {
@@ -92,7 +88,7 @@ export class UsuariosAuthService {
 
     async remove(id: number) {
         await this.usuariosService.findOne(id, { throwException: true });
-        await this.usuarioRepository.delete(id);
+        await this.usuarioRepository.softDelete(id);
         return true;
     }
 

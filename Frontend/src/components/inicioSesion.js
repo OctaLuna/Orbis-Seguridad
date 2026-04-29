@@ -45,6 +45,7 @@ const InicioSesion = ({ onLogin, onClose }) => {
   const [contrasenia, setContrasenia] = useState("");
   const [correo, setCorreo] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaChecked, setCaptchaChecked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState(null);
   const [isVisible, setIsVisible] = useState(true);
@@ -101,6 +102,7 @@ const InicioSesion = ({ onLogin, onClose }) => {
   // Función para manejar el envío del formulario
   useEffect(() => {
     setMensaje(null);
+    setCaptchaChecked(false);
   }, [modoRegistro]);
 
   const handleSubmit = async (e) => {
@@ -109,6 +111,11 @@ const InicioSesion = ({ onLogin, onClose }) => {
 
     if (!usuario || !contrasenia || (modoRegistro && !correo)) {
       setMensaje("Por favor, rellena todos los campos requeridos");
+      return;
+    }
+
+    if (modoRegistro && !captchaChecked) {
+      setMensaje('Por favor, marca la casilla de reCAPTCHA para continuar.');
       return;
     }
 
@@ -121,6 +128,7 @@ const InicioSesion = ({ onLogin, onClose }) => {
         setModoRegistro(false);
         setContrasenia("");
         setCorreo("");
+        setCaptchaChecked(false);
       } else {
         const { user, token, message } = await loginService({ usuario, contrasenia });
         if (onLogin) {
@@ -353,13 +361,26 @@ const InicioSesion = ({ onLogin, onClose }) => {
                       marginBottom: "clamp(1rem, 2.5vw, 1.5rem)",
                     }}
                   />
+
+                  <label className="mt-4 flex items-start gap-3 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-sm">
+                    <input
+                      type="checkbox"
+                      checked={captchaChecked}
+                      onChange={(e) => setCaptchaChecked(e.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-[#2C5282] focus:ring-[#2C5282]"
+                    />
+                    <span className="leading-5">
+                      Confirmo que no soy un robot.
+                      <strong className="ml-1 text-[#2C5282]">reCAPTCHA</strong>
+                    </span>
+                  </label>
                 </>
               )}
 
               {/* Botón de Enviar */}
               <motion.button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (modoRegistro && !captchaChecked)}
                 variants={buttonVariants}
                 whileHover="hover"
                 whileTap="tap"
