@@ -101,4 +101,41 @@ export class EmpresasController {
 		const empresa = await this.empresasService.findOnePrivate(idEmpresa, idUsuario);
 		return OkRes(res, { empresa });
 	}
+
+	// =========================================================
+    // NUEVAS RUTAS PARA EDITAR Y ELIMINAR EMPRESAS
+    // =========================================================
+
+    @Put('private/:idEmpresa')
+    @UseGuards(AuthRolesGuard([Rol.ADMIN_EMPRESAS]))
+    @ApiOperation({
+        summary: 'Api para actualizar/editar los datos de una empresa',
+    })
+    @ApiOkResponse({ description: 'Empresa actualizada exitosamente' })
+    @ApiNotFoundResponse(SwaggerNotFoundCommon())
+    async updateEmpresaPrivate(
+        @Param('idEmpresa', ParseIntPipe) idEmpresa: number,
+        @Body() data: any, // Idealmente deberías crear un UpdateEmpresaDto
+        @Res() res: Response,
+    ) {
+        // Llama a la función del servicio (tendrás que crearla si no existe)
+        const empresa = await this.empresasService.updateEmpresa(idEmpresa, data);
+        return OkRes(res, { message: 'Empresa actualizada correctamente', empresa });
+    }
+
+    @Delete(':idEmpresa')
+    @UseGuards(AuthRolesGuard([Rol.ADMIN_EMPRESAS]))
+    @ApiOperation({
+        summary: 'Api para eliminar o dar de baja una empresa',
+    })
+    @ApiOkResponse({ description: 'Empresa eliminada exitosamente' })
+    @ApiNotFoundResponse(SwaggerNotFoundCommon())
+    async deleteEmpresa(
+        @Param('idEmpresa', ParseIntPipe) idEmpresa: number,
+        @Res() res: Response,
+    ) {
+        // Llama a la función del servicio (tendrás que crearla si no existe)
+        await this.empresasService.deleteEmpresa(idEmpresa);
+        return OkRes(res, { message: 'Empresa eliminada del sistema' });
+    }
 }

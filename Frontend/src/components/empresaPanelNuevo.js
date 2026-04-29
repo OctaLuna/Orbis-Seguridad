@@ -7,6 +7,8 @@ import EmpresaLista from './empresaLista';
 import EmpresaModal from './empresaModal';
 import { getEmpresasCards, getEmpresaPublicById, getEmpresaPrivateById, updateEmpresaPrivate } from '../services/empresaService';
 import { cacheManager } from './utils/cacheUtils';
+import Swal from 'sweetalert2';
+import apiClient from '../services/api'; // Necesitamos tu cliente Axios para el DELETE
 
 let privateDetailsGloballyDisabled = false;
 
@@ -322,6 +324,55 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
     setVistaGrid(prev => !prev);
   };
 
+  // --- FUNCIONALIDAD DEL BOTÓN ELIMINAR ---
+  const handleDeleteClick = (empresa) => {
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: `Estás a punto de eliminar/desactivar a "${empresa.nombre}". Esta acción no se puede deshacer.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33', // Rojo peligro
+      cancelButtonColor: '#2C5282', // Azul de tu marca
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      background: '#f8fafc',
+      borderRadius: '10px'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          // Llamada al backend para eliminar (ajusta la ruta si tu endpoint es diferente)
+          await apiClient.delete(`/api/empresas/${empresa.id}`);
+          
+          Swal.fire({
+            title: '¡Eliminado!',
+            text: 'La empresa ha sido eliminada del sistema.',
+            icon: 'success',
+            confirmButtonColor: '#2C5282'
+          }).then(() => {
+             // Recargamos la página para limpiar la caché y actualizar la tabla
+             window.location.reload();
+          });
+        } catch (error) {
+          console.error("Error al eliminar empresa:", error);
+          Swal.fire({
+            title: 'Error',
+            text: 'No se pudo eliminar la empresa. Revisa si tiene dependencias.',
+            icon: 'error',
+            confirmButtonColor: '#2C5282'
+          });
+        }
+      }
+    });
+  };
+
+  // --- FUNCIONALIDAD DEL BOTÓN EDITAR ---
+  const handleEditClick = (empresa) => {
+    // Como tu EmpresaModal ya está preparado para editar (recibe onSave y canEdit),
+    // la forma más eficiente es simplemente simular el click normal en la tarjeta
+    // para que se abra tu vista detallada con los campos editables.
+    handleCardClick(empresa);
+  };
+
   return (
     <>
     <div className="p-2 flex flex-col md:flex-row gap-4 overflow-hidden" style={{ height: `${panelHeight}vh` }}>
@@ -357,8 +408,8 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
           vistaGrid={vistaGrid}
           onCardClick={handleCardClick}
           loggedInUser={loggedInUser}
-          onEdit={(empresa) => console.log("Clic en Editar:", empresa.nombre)}
-          onDelete={(empresa) => console.log("Clic en Eliminar:", empresa.nombre)}
+          onEdit={handleEditClick}       
+          onDelete={handleDeleteClick}   
         />
       </div>
     </div>

@@ -630,7 +630,7 @@ const AuthRolesGuard = (roles) => {
             const { user } = context.switchToHttp().getRequest();
             if (!roles || roles.length === 0)
                 return true;
-            const isAllowed = roles.some((rol) => user.rol <= rol);
+            const isAllowed = roles.some((rol) => Number(user.rol) <= rol);
             if (!isAllowed) {
                 throw new common_1.ForbiddenException({
                     message: 'No tiene permiso'
@@ -878,7 +878,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
                 message: 'Token inválido'
             });
         }
-        if (usuario.idRol !== roles_const_1.RolesEnum.TEMPORAL) {
+        if (usuario.idRol !== roles_const_1.Rol.TEMPORAL) {
             return data;
         }
         if (!usuario.expiracion) {
@@ -4257,8 +4257,8 @@ exports.validationSchema = Joi.object({
     ACTIVE_JWT: Joi.boolean().default(true),
     JWT_SECRET: Joi.string().required(),
     JWT_TIME_EXPIRE: Joi.string().required(),
-    USER_EMAIL: Joi.string().email().required(),
-    PASS_AUTH: Joi.string().required(),
+    USER_EMAIL: Joi.string().email().optional(),
+    PASS_AUTH: Joi.string().optional(),
     PASSWORD_EXPIRY_DAYS: Joi.number().default(60),
     PASSWORD_HISTORY_COUNT: Joi.number().default(10),
     MAX_LOGIN_ATTEMPTS: Joi.number().default(3),
@@ -5555,7 +5555,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c, _d, _e, _f, _g, _h;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.EmpresasController = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
@@ -5598,6 +5598,14 @@ let EmpresasController = class EmpresasController {
         const idUsuario = isInvestigador ? req.user.sub : undefined;
         const empresa = await this.empresasService.findOnePrivate(idEmpresa, idUsuario);
         return (0, utils_1.OkRes)(res, { empresa });
+    }
+    async updateEmpresaPrivate(idEmpresa, data, res) {
+        const empresa = await this.empresasService.updateEmpresa(idEmpresa, data);
+        return (0, utils_1.OkRes)(res, { message: 'Empresa actualizada correctamente', empresa });
+    }
+    async deleteEmpresa(idEmpresa, res) {
+        await this.empresasService.deleteEmpresa(idEmpresa);
+        return (0, utils_1.OkRes)(res, { message: 'Empresa eliminada del sistema' });
     }
 };
 exports.EmpresasController = EmpresasController;
@@ -5678,6 +5686,35 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object, typeof (_h = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _h : Object]),
     __metadata("design:returntype", Promise)
 ], EmpresasController.prototype, "findOnePrivate", null);
+__decorate([
+    Put('private/:idEmpresa'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_EMPRESAS])),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Api para actualizar/editar los datos de una empresa',
+    }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Empresa actualizada exitosamente' }),
+    (0, swagger_1.ApiNotFoundResponse)((0, utils_1.SwaggerNotFoundCommon)()),
+    __param(0, (0, common_1.Param)('idEmpresa', common_1.ParseIntPipe)),
+    __param(1, Body()),
+    __param(2, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object, typeof (_j = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _j : Object]),
+    __metadata("design:returntype", Promise)
+], EmpresasController.prototype, "updateEmpresaPrivate", null);
+__decorate([
+    Delete(':idEmpresa'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_EMPRESAS])),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Api para eliminar o dar de baja una empresa',
+    }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Empresa eliminada exitosamente' }),
+    (0, swagger_1.ApiNotFoundResponse)((0, utils_1.SwaggerNotFoundCommon)()),
+    __param(0, (0, common_1.Param)('idEmpresa', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, typeof (_k = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _k : Object]),
+    __metadata("design:returntype", Promise)
+], EmpresasController.prototype, "deleteEmpresa", null);
 exports.EmpresasController = EmpresasController = __decorate([
     (0, swagger_1.ApiTags)('Empresas'),
     (0, common_1.Controller)('api/empresas'),
@@ -15451,7 +15488,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UsuariosController = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
@@ -15495,6 +15532,10 @@ let UsuariosController = class UsuariosController {
     async desbloquearCuenta(id, res) {
         await this.usuariosService.desbloquearCuenta(id);
         return (0, utils_1.OkRes)(res, { message: 'Cuenta desbloqueada exitosamente' });
+    }
+    async restaurarUsuario(id, res) {
+        await this.usuariosService.restaurar(id);
+        return (0, utils_1.OkRes)(res, { message: 'Usuario restaurado exitosamente' });
     }
     async deleteUsuario(id, res) {
         await this.usuariosAuthService.remove(id);
@@ -15577,6 +15618,18 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsuariosController.prototype, "desbloquearCuenta", null);
 __decorate([
+    (0, common_1.Patch)(':id/restaurar'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.SUPERADMIN])),
+    (0, swagger_1.ApiOperation)({ summary: 'Restaurar usuario desactivado (solo SUPERADMIN)' }),
+    (0, swagger_1.ApiOkResponse)({ description: 'Usuario restaurado exitosamente', type: common_response_dto_1.CommonResponseDto }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Id del usuario' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, typeof (_m = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _m : Object]),
+    __metadata("design:returntype", Promise)
+], UsuariosController.prototype, "restaurarUsuario", null);
+__decorate([
     (0, common_1.Delete)(':id'),
     (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.ADMIN_RRHH])),
     (0, swagger_1.ApiOperation)({ summary: 'Api para eliminar a un usuario (solo admins)' }),
@@ -15587,7 +15640,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, typeof (_m = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _m : Object]),
+    __metadata("design:paramtypes", [Number, typeof (_o = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _o : Object]),
     __metadata("design:returntype", Promise)
 ], UsuariosController.prototype, "deleteUsuario", null);
 __decorate([
@@ -15600,7 +15653,7 @@ __decorate([
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Res)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, typeof (_o = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _o : Object]),
+    __metadata("design:paramtypes", [Number, typeof (_p = typeof express_1.Response !== "undefined" && express_1.Response) === "function" ? _p : Object]),
     __metadata("design:returntype", Promise)
 ], UsuariosController.prototype, "obtenerHistorialPasswords", null);
 exports.UsuariosController = UsuariosController = __decorate([
@@ -15764,17 +15817,12 @@ const swagger_1 = __webpack_require__(/*! @nestjs/swagger */ "@nestjs/swagger");
 const class_validator_1 = __webpack_require__(/*! class-validator */ "class-validator");
 class UpdateUsuarioDto {
     usuario;
-    contrasenia;
     correo;
     idRol;
 }
 exports.UpdateUsuarioDto = UpdateUsuarioDto;
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Nombre de usuario (entre 1 y 50 caracteres)',
-        example: 'jdoe',
-        type: String
-    }),
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Nombre de usuario', example: 'jdoe' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(1),
@@ -15782,36 +15830,18 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateUsuarioDto.prototype, "usuario", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Contraseña del usuario (mínimo 6 caracteres)',
-        example: 'segura123',
-        type: String
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.MinLength)(8),
-    (0, class_validator_1.MaxLength)(20),
-    __metadata("design:type", String)
-], UpdateUsuarioDto.prototype, "contrasenia", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Correo electrónico válido',
-        example: 'usuario@ejemplo.com',
-        type: String
-    }),
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Correo electrónico válido', example: 'usuario@ejemplo.com' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEmail)(),
     (0, class_validator_1.MaxLength)(150),
     __metadata("design:type", String)
 ], UpdateUsuarioDto.prototype, "correo", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'ID del rol asignado al usuario',
-        example: 2,
-        type: String
-    }),
+    (0, swagger_1.ApiPropertyOptional)({ description: 'ID del rol (1-5)', example: 3 }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(5),
     __metadata("design:type", Number)
 ], UpdateUsuarioDto.prototype, "idRol", void 0);
 
@@ -16077,7 +16107,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var _a, _b, _c, _d, _e, _f, _g, _h;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Usuario = void 0;
 const typeorm_1 = __webpack_require__(/*! typeorm */ "typeorm");
@@ -16103,6 +16133,7 @@ let Usuario = class Usuario {
     expiracion;
     createdAt;
     updatedAt;
+    deletedAt;
     rol;
 };
 exports.Usuario = Usuario;
@@ -16187,9 +16218,13 @@ __decorate([
     __metadata("design:type", typeof (_g = typeof Date !== "undefined" && Date) === "function" ? _g : Object)
 ], Usuario.prototype, "updatedAt", void 0);
 __decorate([
+    (0, typeorm_1.DeleteDateColumn)({ name: 'deleted_at', nullable: true }),
+    __metadata("design:type", typeof (_h = typeof Date !== "undefined" && Date) === "function" ? _h : Object)
+], Usuario.prototype, "deletedAt", void 0);
+__decorate([
     (0, typeorm_1.ManyToOne)(() => rol_entity_1.Rol, (rol) => rol.usuarios),
     (0, typeorm_1.JoinColumn)({ name: 'id_rol' }),
-    __metadata("design:type", typeof (_h = typeof rol_entity_1.Rol !== "undefined" && rol_entity_1.Rol) === "function" ? _h : Object)
+    __metadata("design:type", typeof (_j = typeof rol_entity_1.Rol !== "undefined" && rol_entity_1.Rol) === "function" ? _j : Object)
 ], Usuario.prototype, "rol", void 0);
 exports.Usuario = Usuario = __decorate([
     (0, typeorm_1.Entity)('usuarios')
@@ -16540,9 +16575,6 @@ let UsuariosAuthService = class UsuariosAuthService {
             }
             entity.usuario = data.usuario;
         }
-        if (data.contrasenia) {
-            entity.contrasenia = await (0, utils_1.hashPassword)(data.contrasenia);
-        }
         if (data.correo && data.correo !== entity.correo) {
             const repeatedEmail = await this.usuariosService.findOneByCorreo(data.correo, { throwException: false });
             if (repeatedEmail && repeatedEmail.id !== id) {
@@ -16558,7 +16590,7 @@ let UsuariosAuthService = class UsuariosAuthService {
     }
     async remove(id) {
         await this.usuariosService.findOne(id, { throwException: true });
-        await this.usuarioRepository.delete(id);
+        await this.usuarioRepository.softDelete(id);
         return true;
     }
     async crearUsuario(dto, creadorIdRol) {
@@ -16719,10 +16751,14 @@ let UsuariosService = class UsuariosService {
             select: {
                 id: true,
                 usuario: true,
+                nombre: true,
+                apellido: true,
                 correo: true,
                 idRol: true,
-                expiracion: true
-            }
+                isLocked: true,
+                failedAttempts: true,
+                expiracion: true,
+            },
         });
         return usuario;
     }
@@ -16801,6 +16837,9 @@ let UsuariosService = class UsuariosService {
             resetToken: undefined,
             resetTokenExpires: undefined,
         });
+    }
+    async restaurar(id) {
+        await this.usuarioRepository.restore({ id });
     }
     async desbloquearCuenta(id) {
         await this.usuarioRepository.update(id, {
@@ -17065,14 +17104,16 @@ exports.UsuariosModule = UsuariosModule = __decorate([
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.ROLES_CON_LECTURA = exports.ROLES_INVESTIGADORES = exports.ROLES_ADMIN = exports.Rol = exports.RolesEnum = void 0;
+exports.ROLES_CON_LECTURA = exports.ROLES_INVESTIGADORES = exports.ROLES_ADMIN_EMPRESAS = exports.ROLES_ADMIN_SISTEMA = exports.ROLES_ADMIN = exports.Rol = exports.RolesEnum = void 0;
 var RolesEnum;
 (function (RolesEnum) {
     RolesEnum[RolesEnum["SUPERADMIN"] = 1] = "SUPERADMIN";
-    RolesEnum[RolesEnum["ADMIN"] = 2] = "ADMIN";
-    RolesEnum[RolesEnum["INVESTIGADOR"] = 3] = "INVESTIGADOR";
-    RolesEnum[RolesEnum["TEMPORAL"] = 4] = "TEMPORAL";
-    RolesEnum[RolesEnum["VISITANTE"] = 5] = "VISITANTE";
+    RolesEnum[RolesEnum["ADMIN_RRHH"] = 2] = "ADMIN_RRHH";
+    RolesEnum[RolesEnum["ADMIN_EMPRESAS"] = 3] = "ADMIN_EMPRESAS";
+    RolesEnum[RolesEnum["INVESTIGADOR_SENIOR"] = 4] = "INVESTIGADOR_SENIOR";
+    RolesEnum[RolesEnum["INVESTIGADOR_JUNIOR"] = 5] = "INVESTIGADOR_JUNIOR";
+    RolesEnum[RolesEnum["TEMPORAL"] = 6] = "TEMPORAL";
+    RolesEnum[RolesEnum["VISITANTE"] = 7] = "VISITANTE";
 })(RolesEnum || (exports.RolesEnum = RolesEnum = {}));
 var Rol;
 (function (Rol) {
@@ -17085,6 +17126,8 @@ var Rol;
     Rol[Rol["VISITANTE"] = 7] = "VISITANTE";
 })(Rol || (exports.Rol = Rol = {}));
 exports.ROLES_ADMIN = [Rol.SUPERADMIN, Rol.ADMIN_RRHH, Rol.ADMIN_EMPRESAS];
+exports.ROLES_ADMIN_SISTEMA = [Rol.SUPERADMIN, Rol.ADMIN_RRHH];
+exports.ROLES_ADMIN_EMPRESAS = [Rol.SUPERADMIN, Rol.ADMIN_EMPRESAS];
 exports.ROLES_INVESTIGADORES = [Rol.INVESTIGADOR_SENIOR, Rol.INVESTIGADOR_JUNIOR];
 exports.ROLES_CON_LECTURA = [
     Rol.SUPERADMIN,

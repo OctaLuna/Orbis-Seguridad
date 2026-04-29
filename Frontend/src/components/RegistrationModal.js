@@ -144,11 +144,20 @@ const RegistrationModal = ({ isOpen, onClose }) => {
 
     const handleClose = useCallback(() => { 
         onClose(); 
+        
+        // LA MAGIA: Si el formulario se envió con éxito, forzamos una recarga limpia 
+        // para destruir la caché del panel y traer la nueva empresa recién horneada
+        if (isSubmitted) {
+            window.location.reload();
+            return;
+        }
+
+        // Si el usuario solo cerró el modal a medias (con la X), limpiamos los campos en silencio
         setTimeout(() => { 
             setStep(1); setIsSubmitted(false); setFormData(initialFormData); setError(null); 
         }, 300); 
-    }, [onClose]);
-
+    }, [onClose, isSubmitted]); // <-- Importante agregar isSubmitted a las dependencias
+    
     const handleFormChange = (e) => { 
         const { name, value, type, checked } = e.target; 
         setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value })); 
@@ -400,20 +409,41 @@ const RegistrationModal = ({ isOpen, onClose }) => {
                         <button onClick={handleClose} className="bg-blue-800 text-white py-2 px-6 rounded-lg">Cerrar</button>
                     </div>
                 ) : (
-                    <form onSubmit={handleSubmit} className="flex flex-col flex-grow overflow-hidden">
+                        <form onSubmit={(e) => e.preventDefault()} className="flex flex-col flex-grow overflow-hidden">
                         <div className="pt-8"><ProgressBar currentStep={step} /></div>
                         <div className="p-8 pt-0 overflow-y-auto flex-grow">
                             {error && <div className="bg-red-100 text-red-600 p-4 mb-4 rounded"><p>{error}</p></div>}
                             {renderStepContent()}
                         </div>
-                        <footer className="bg-white p-4 flex justify-between border-t">
-                            <button type="button" onClick={() => setStep(s => Math.max(s - 1, 1))} disabled={step === 1} className="border px-4 py-2 rounded-lg disabled:opacity-50">Anterior</button>
-                            {step < 7 ? (
-                                <button type="button" onClick={() => setStep(s => Math.min(s + 1, 7))} className="bg-blue-800 text-white px-4 py-2 rounded-lg">Siguiente</button>
-                            ) : (
-                                <button type="submit" disabled={isSubmitting} className="bg-blue-800 text-white px-6 py-2 rounded-lg">{isSubmitting ? 'Enviando...' : 'Guardar'}</button>
-                            )}
-                        </footer>
+                        <footer className="bg-white p-4 flex justify-between border-t mt-auto">
+    <button 
+        type="button" 
+        onClick={() => setStep(s => Math.max(s - 1, 1))} 
+        disabled={step === 1} 
+        className="border border-slate-300 bg-white text-slate-700 px-4 py-2 rounded-lg disabled:opacity-50 hover:bg-slate-50 transition-colors"
+    >
+        Anterior
+    </button>
+    
+    {step < 7 ? (
+        <button 
+            type="button" 
+            onClick={() => setStep(s => Math.min(s + 1, 7))} 
+            className="bg-blue-800 text-white font-bold px-6 py-2 rounded-lg hover:bg-blue-900 transition-colors shadow-md"
+        >
+            Siguiente
+        </button>
+    ) : (
+        <button 
+            type="button" // MAGIA: Ya no es type="submit"
+            onClick={handleSubmit} // MAGIA: Llamamos la función directamente aquí
+            disabled={isSubmitting} 
+            className="bg-green-600 text-white font-bold px-8 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-md disabled:opacity-50"
+        >
+            {isSubmitting ? 'Enviando...' : 'Guardar Empresa'}
+        </button>
+    )}
+</footer>
                     </form>
                 )}
             </div>
