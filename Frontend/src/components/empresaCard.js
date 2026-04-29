@@ -1,31 +1,19 @@
-// src/components/EmpresaCard.js
 import React from 'react';
 import { motion } from 'framer-motion';
+// Importamos los iconos
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
-// Componente auxiliar para la línea de tiempo de hitos
 const CardTimeline = ({ hitos = [] }) => {
-
     return (
-        // Contenedor principal de la línea de tiempo. Altura fija y paddings.
         <div className="relative w-full h-4 px-4 pb-1 pt-1 flex items-center justify-between">
-            
-            {/* Línea Azul de Base */}
             <div className="absolute inset-x-0 mx-4 h-1 bg-[#0f2c4a] rounded-full"></div>
-
-            {/* Círculos de Hitos (si existen) */}
             {hitos.length > 0 && hitos.map((hito, index) => {
-                // Aquí calculamos la posición horizontal del hito.
-                // Usamos (index + 1) / (total_hitos + 1) para distribuir uniformemente los puntos
                 const positionPercentage = (index + 1) / (hitos.length + 1) * 100;
-
                 return (
                     <div
                         key={index}
                         className="absolute w-3 h-3 bg-white border-2 border-text-muted rounded-full shadow cursor-pointer hover:scale-125 transition-transform duration-200"
-                        style={{
-                            // Usamos el left calculado para posicionar el círculo sobre la línea.
-                            left: `calc(${positionPercentage}% - 6px)`, // Restamos la mitad del tamaño del círculo (6px) para centrarlo.
-                        }}
+                        style={{ left: `calc(${positionPercentage}% - 6px)` }}
                         title={hito.nombre || `Hito ${index + 1}`}
                     />
                 );
@@ -34,29 +22,43 @@ const CardTimeline = ({ hitos = [] }) => {
     );
 };
 
-// Componente principal de la tarjeta (ahora con un nuevo bloque CardTimeline)
-const EmpresaCard = ({ empresa, onClick, isGrid }) => {
-    // Clases condicionales (sin cambios)
-    const cardLayoutClasses = isGrid 
-        ? "flex-col" // Vista Grid: logo arriba, texto abajo
-        : "flex-col sm:flex-row"; // Vista Lista: logo a la izquierda, texto a la derecha (en pantallas sm+)
-
-    const imageContainerClasses = isGrid
-        ? "h-32 w-full flex-shrink-0" // Vista Grid: Imagen grande arriba
-        : "h-32 w-full sm:w-48 flex-shrink-0"; // Vista Lista: Imagen más pequeña a la izquierda
-
+// Añadimos loggedInUser, onEdit y onDelete a las props
+const EmpresaCard = ({ empresa, onClick, isGrid, loggedInUser, onEdit, onDelete }) => {
+    const cardLayoutClasses = isGrid ? "flex-col" : "flex-col sm:flex-row";
+    const imageContainerClasses = isGrid ? "h-32 w-full flex-shrink-0" : "h-32 w-full sm:w-48 flex-shrink-0";
     const empresaHitos = empresa.hitos || []; 
+
+    // Verificamos si es administrador (Roles 1 y 2)
+    const isAdmin = loggedInUser?.idRol === 1 || loggedInUser?.idRol === 2;
 
     return (
         <motion.div
             className={`relative bg-white rounded-tl-lg rounded-lg shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer flex ${cardLayoutClasses} ${empresaHitos.length > 0 ? 'pb-8' : 'pb-0'}`}
-            //Se añade 'pb-8' (padding-bottom) si hay hitos para dar espacio a la línea
             whileHover={{ scale: 1.02 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => onClick(empresa)}
         >
-            {/* Contenedor de la Imagen */}
+            {/* BOTONES DE ADMINISTRADOR FLOTANTES */}
+            {isAdmin && (
+                <div className="absolute top-2 right-2 z-10 flex gap-2">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onEdit(empresa); }}
+                        className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md text-[#2C5282] hover:bg-blue-50 transition-colors"
+                        title="Editar Empresa"
+                    >
+                        <PencilIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(empresa); }}
+                        className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md text-red-600 hover:bg-red-50 transition-colors"
+                        title="Desactivar Empresa"
+                    >
+                        <TrashIcon className="w-5 h-5" />
+                    </button>
+                </div>
+            )}
+
             <div className={`relative ${imageContainerClasses} rounded-tl-lg overflow-hidden`}>
                 <img
                     src={empresa.imagen}
@@ -70,7 +72,6 @@ const EmpresaCard = ({ empresa, onClick, isGrid }) => {
                 </div>
             </div>
             
-            {/* Contenido de la Tarjeta (flex-grow para ocupar el espacio restante) */}
             <div className="p-4 flex-grow">
                 <p className="text-sm text-gray-600">{empresa.rubro || 'Rubro no especificado'}</p>
                 <p className="text-sm text-gray-500">{empresa.departamento || 'Departamento no disponible'}</p>
