@@ -777,9 +777,10 @@ let AuthService = class AuthService {
             }
         }
         const payload = {
-            id: usuario.id,
             sub: usuario.id,
+            id: usuario.id,
             usuario: usuario.usuario,
+            rol: usuario.idRol,
             idRol: usuario.idRol,
             must_change_password: mustChangePassword,
             rubrosPermitidos: rubrosAsignados

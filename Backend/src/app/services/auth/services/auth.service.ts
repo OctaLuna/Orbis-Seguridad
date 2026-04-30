@@ -132,12 +132,13 @@ export class AuthService {
         // =========================================================
 
         const payload = {
-            id: usuario.id,         // Ajustado para tu frontend
             sub: usuario.id,
+            id: usuario.id,
             usuario: usuario.usuario,
-            idRol: usuario.idRol,   // Ajustado para tu frontend
+            rol: usuario.idRol,      // <--- ¡DEVOLVEMOS EL NOMBRE ORIGINAL!
+            idRol: usuario.idRol,    // Dejamos este también por si tu código nuevo lo usa
             must_change_password: mustChangePassword,
-            rubrosPermitidos: rubrosAsignados // <--- ¡AQUÍ ESTÁ LA MOCHILA!
+            rubrosPermitidos: rubrosAsignados
         };
         
         const { secret, expiresIn } = this.jwtConfig.get();
