@@ -6,6 +6,7 @@
     "@cloudinary/react": "^1.14.1",
     "@cloudinary/url-gen": "^1.21.0",
     "@heroicons/react": "^2.2.0",
+    "@nestjs/common": "^11.1.19",
     "axios": "^1.8.4",
     "clsx": "^2.1.1",
     "firebase": "^11.6.0",

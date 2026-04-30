@@ -1,77 +1,14 @@
 .revista-container {
-  background-color: #f5ede3; /* fondo beige */
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.revista-hover-area {
-  position: relative;
-  display: inline-block;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* sombra elegante */
-  overflow: hidden;
-  transition: transform 0.3s ease;
-}
-
-.revista-hover-area:hover {
-  transform: translateY(-5px); /* levanta sutilmente al hacer hover */
-}
-
-.revista-img {
-  width: 420px;
-  height: auto;
-  display: block;
-  border-radius: 12px;
-}
-
-.revista-tooltip {
-  position: absolute;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 51, 102, 0.95); /* azul elegante */
-  color: #fff;
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  text-align: center;
-  opacity: 0;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  pointer-events: none;
-  max-width: 300px;
-}
-
-.revista-hover-area:hover .revista-tooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(-50%);
-}
-
-.revista-footer-text {
-  position: absolute;
-  bottom: 20px;
-  width: 100%;
-  text-align: center;
-  font-size: 0.85rem;
-  color: #555;
-  font-style: italic;
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-.revista-container {
   position: relative;
   height: 100vh;
-  background-color: #f5ede3; /* beige liso */
+  background: linear-gradient(135deg, #f5ede3 0%, #fffaf0 50%, #f0e6d2 100%);
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  border-top: 6px solid #003366;   /* azul marino */
-  border-bottom: 6px solid #003366;
-  padding-top: 0vh;
-  padding-bottom: 0vh;
+  border-top: 8px solid #003366;
+  border-bottom: 8px solid #003366;
+  padding: 0;
 }
 
 /* Línea decorativa superior e inferior */
@@ -81,29 +18,103 @@
   position: absolute;
   width: 100%;
   text-align: center;
-  font-size: 1.1rem;
-  color: #003366;
+  font-size: 1.2rem;
+  color: #e4c67a;
   font-family: 'Georgia', serif;
-  opacity: 0.25;
+  letter-spacing: 8px;
+  opacity: 0.4;
   pointer-events: none;
+  font-weight: bold;
 }
 
 .revista-container::before {
-  top: 15px;
+  top: 20px;
 }
 
 .revista-container::after {
-  bottom: 15px;
+  bottom: 20px;
+}
+
+.revista-hover-area {
+  position: relative;
+  display: inline-block;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 20px 60px rgba(0, 51, 102, 0.2), 
+              0 0 40px rgba(228, 198, 122, 0.15);
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+  cursor: pointer;
+}
+
+.revista-hover-area:hover {
+  transform: translateY(-12px) scale(1.02);
+  box-shadow: 0 30px 80px rgba(0, 51, 102, 0.3),
+              0 0 60px rgba(228, 198, 122, 0.25);
+}
+
+.revista-img {
+  width: 420px;
+  height: auto;
+  display: block;
+  border-radius: 16px;
+  transition: filter 0.4s ease;
+}
+
+.revista-hover-area:hover .revista-img {
+  filter: brightness(0.95) contrast(1.05);
+}
+
+.revista-tooltip {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, rgba(0, 51, 102, 0.98) 0%, rgba(0, 75, 150, 0.95) 100%);
+  color: #fff;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
+  pointer-events: none;
+  max-width: 320px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(228, 198, 122, 0.3);
+  letter-spacing: 0.5px;
+  box-shadow: 0 8px 32px rgba(0, 51, 102, 0.3);
+}
+
+.revista-hover-area:hover .revista-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-15px);
+}
+
+.revista-footer-text {
+  position: absolute;
+  bottom: 30px;
+  width: 100%;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #666;
+  font-family: 'Georgia', serif;
+  font-style: italic;
+  opacity: 0.6;
+  pointer-events: none;
+  letter-spacing: 1px;
 }
 
 /* Línea sutil central decorativa */
 .revista-divider {
   position: absolute;
   top: 50%;
-  left: 10%;
-  width: 80%;
-  height: 1px;
-  background-color: #e4c67a; /* dorado claro */
+  left: 5%;
+  width: 90%;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #e4c67a 20%, #e4c67a 80%, transparent);
   opacity: 0.3;
   z-index: 0;
+  box-shadow: 0 0 20px rgba(228, 198, 122, 0.2);
 }
