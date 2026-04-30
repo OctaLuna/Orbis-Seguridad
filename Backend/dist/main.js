@@ -5649,7 +5649,7 @@ __decorate([
 ], EmpresasController.prototype, "findAllCardsPublic", null);
 __decorate([
     (0, common_1.Get)('cards/private'),
-    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.INVESTIGADOR_JUNIOR])),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([...roles_const_1.ROLES_ADMIN_EMPRESAS, ...roles_const_1.ROLES_INVESTIGADORES])),
     (0, swagger_1.ApiOperation)({
         summary: 'Api para obtener las empresas para las cards de la pagina web, para usuario con sesion'
     }),
@@ -5658,6 +5658,11 @@ __decorate([
         type: find_all_empresas_cards_pagination_response_dto_1.FindAllEmpresasCardsPaginationResponseDto
     }),
     (0, swagger_1.ApiBadRequestResponse)((0, utils_1.SwaggerBadRequestCommon)()),
+    (0, common_1.Get)('cards/private'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([...roles_const_1.ROLES_ADMIN_EMPRESAS, ...roles_const_1.ROLES_INVESTIGADORES])),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Api para obtener las empresas para las cards de la pagina web, para usuario con sesion'
+    }),
     __param(0, (0, common_1.Query)()),
     __param(1, (0, common_1.Req)()),
     __param(2, (0, common_1.Res)()),
@@ -5683,7 +5688,7 @@ __decorate([
 ], EmpresasController.prototype, "findOnePublic", null);
 __decorate([
     (0, common_1.Get)('private/:idEmpresa'),
-    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([roles_const_1.Rol.INVESTIGADOR_JUNIOR])),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([...roles_const_1.ROLES_ADMIN_EMPRESAS, ...roles_const_1.ROLES_INVESTIGADORES])),
     (0, swagger_1.ApiOperation)({
         summary: 'Api paara buscar una empresa. para usuarios con sesion',
     }),
@@ -5692,6 +5697,11 @@ __decorate([
         type: find_one_empresa_private_dto_1.FindOneEmpresaPrivateDto
     }),
     (0, swagger_1.ApiNotFoundResponse)((0, utils_1.SwaggerNotFoundCommon)()),
+    (0, common_1.Get)('private/:idEmpresa'),
+    (0, common_1.UseGuards)((0, auth_roles_guard_1.AuthRolesGuard)([...roles_const_1.ROLES_ADMIN_EMPRESAS, ...roles_const_1.ROLES_INVESTIGADORES])),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Api paara buscar una empresa. para usuarios con sesion',
+    }),
     __param(0, (0, common_1.Param)('idEmpresa', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Req)()),
     __param(2, (0, common_1.Res)()),
@@ -15277,7 +15287,7 @@ let EmpresasService = class EmpresasService {
             .leftJoin('tipoEmpSoc.tipoSocietario', 'tipoSocietario')
             .leftJoin('empresa.fundadores', 'fundador');
         if (idUsuario) {
-            query.innerJoin('investigador_empresa', 'ie', 'ie.id_empresa = empresa.id AND ie.id_usuario = :idUsuario', { idUsuario });
+            query.innerJoin('investigador_rubro', 'ir', 'ir.id_rubro = rubro.id AND ir.id_usuario = :idUsuario', { idUsuario });
         }
         query
             .select([
@@ -16833,6 +16843,9 @@ let UsuariosService = class UsuariosService {
                 failedAttempts: true,
                 expiracion: true,
             },
+            where: {
+                idRol: (0, typeorm_2.Not)(1)
+            }
         });
         return usuario;
     }

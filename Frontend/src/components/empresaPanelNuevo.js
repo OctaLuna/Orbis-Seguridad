@@ -38,15 +38,20 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
   const panelHeight = 82;
 
   // Claves para el cache
-  const CACHE_KEYS = useMemo(() => ({
-    EMPRESAS_CARDS: 'empresas-cards-data',
-    EMPRESA_DETAIL: (id) => `empresa-detail-${id}`
-  }), []);
-
+  // Claves para el cache (¡Ahora separadas por permisos!)
   const canViewPrivate = useMemo(() => {
-    if (!loggedInUser?.idRol) return false;
-    return [1, 2, 3, 4, 5].includes(loggedInUser.idRol);
-  }, [loggedInUser?.idRol]);
+    const rolActual = Number(loggedInUser?.idRol || loggedInUser?.rol);
+    if (!rolActual) return false;
+    // Ahora sí o sí entenderá que el 4 y 5 pueden ver la data privada
+    return [1, 2, 3, 4, 5].includes(rolActual); 
+  }, [loggedInUser]);
+
+  const CACHE_KEYS = useMemo(() => ({
+    EMPRESAS_CARDS: canViewPrivate ? 'empresas-cards-private' : 'empresas-cards-public',
+    EMPRESA_DETAIL: (id) => `empresa-detail-${id}`
+  }), [canViewPrivate]);
+
+  
 
   const [privateDetailEnabled, setPrivateDetailEnabled] = useState(() => canViewPrivate && !privateDetailsGloballyDisabled);
 
@@ -171,31 +176,12 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
 
   // ====== EFECTO PRINCIPAL DE FILTRADO (AQUÍ ESTÁ LA MAGIA) ======
   // ====== EFECTO PRINCIPAL DE FILTRADO (MAGIA DEL JUNIOR) ======
+  // ====== EFECTO PRINCIPAL DE FILTRADO ======
   useEffect(() => {
+    // Ya no filtramos por rol aquí, ¡el BACKEND ya nos manda la lista recortada y segura!
     let lista = [...fullEmpresas];
 
-    // --- 1. FILTRO DE SEGURIDAD POR ROL (INVESTIGADOR JUNIOR) ---
-    const rolUsuario = Number(loggedInUser?.idRol || loggedInUser?.rol);
-    const esInvestigadorJunior = rolUsuario === 5; 
-
-    if (esInvestigadorJunior) {
-      const rubrosPermitidos = loggedInUser?.rubrosPermitidos || [];
-      
-      if (rubrosPermitidos.length > 0) {
-        const rubrosPermitidosNormalizados = rubrosPermitidos.map(normalizarTexto);
-        
-        lista = lista.filter((empresaActual) => {
-          const rubroEmpresaNormalizado = normalizarTexto(empresaActual.rubro);
-          return rubrosPermitidosNormalizados.includes(rubroEmpresaNormalizado);
-        });
-      } else {
-        // Si es junior y no tiene rubros, ve 0 empresas
-        lista = [];
-      }
-    }
-    // -------------------------------------------------------------
-
-    // --- 2. FILTROS NORMALES (Buscador y Mapa) ---
+    // --- FILTROS NORMALES (Buscador y Mapa) ---
     const terminoNormalizado = normalizarTexto(busqueda);
     const departamentosNormalizados = departamentosActivos
       .map(normalizarTexto)
@@ -218,7 +204,7 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
     }
 
     setEmpresas(lista);
-  }, [fullEmpresas, busqueda, departamentosActivos, loggedInUser]);
+  }, [fullEmpresas, busqueda, departamentosActivos]);
   // Función para cargar detalle de empresa con cache
   const loadEmpresaDetail = useCallback(async (empresaId) => {
     const cacheKey = CACHE_KEYS.EMPRESA_DETAIL(empresaId);

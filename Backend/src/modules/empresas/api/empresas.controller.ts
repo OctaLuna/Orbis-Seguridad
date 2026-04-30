@@ -42,7 +42,8 @@ export class EmpresasController {
     }
 
     @Get('cards/private')
-    @UseGuards(AuthRolesGuard([Rol.INVESTIGADOR_JUNIOR]))
+    // SOLUCIÓN 1: Ahora permitimos que tanto Administradores como Investigadores entren aquí
+    @UseGuards(AuthRolesGuard([...ROLES_ADMIN_EMPRESAS, ...ROLES_INVESTIGADORES]))
     @ApiOperation({
         summary: 'Api para obtener las empresas para las cards de la pagina web, para usuario con sesion'
     })
@@ -51,14 +52,21 @@ export class EmpresasController {
         type: FindAllEmpresasCardsPaginationResponseDto
     })
     @ApiBadRequestResponse(SwaggerBadRequestCommon())
+    @Get('cards/private')
+    @UseGuards(AuthRolesGuard([...ROLES_ADMIN_EMPRESAS, ...ROLES_INVESTIGADORES]))
+    @ApiOperation({
+        summary: 'Api para obtener las empresas para las cards de la pagina web, para usuario con sesion'
+    })
     async findAllCardsPrivate(
         @Query() params: FindAllEmpresasCardsParamsDto,
-        @Req() req: any,
+        @Req() req: any, // Aquí viene la info del usuario
         @Res() res: Response
     ) {
-        // M-09: filtrar por empresas asignadas si el usuario es investigador
+        // --- VOLVEMOS A DEFINIR LA VARIABLE AQUÍ ---
         const isInvestigador = ROLES_INVESTIGADORES.includes(req.user.rol);
         const idUsuario = isInvestigador ? (req.user.sub as number) : undefined;
+        // --------------------------------------------
+
         const empresas = await this.empresasService.findAllCardsPrivate(params, idUsuario);
         return OkRes(res, { empresas });
     }
@@ -81,7 +89,8 @@ export class EmpresasController {
     }
 
     @Get('private/:idEmpresa')
-    @UseGuards(AuthRolesGuard([Rol.INVESTIGADOR_JUNIOR]))
+    // SOLUCIÓN 1.1: Arreglamos el guardia aquí también para que el Admin pueda ver detalles
+    @UseGuards(AuthRolesGuard([...ROLES_ADMIN_EMPRESAS, ...ROLES_INVESTIGADORES]))
     @ApiOperation({
         summary: 'Api paara buscar una empresa. para usuarios con sesion',
     })
@@ -90,20 +99,27 @@ export class EmpresasController {
         type: FindOneEmpresaPrivateDto
     })
     @ApiNotFoundResponse(SwaggerNotFoundCommon())
+    @Get('private/:idEmpresa')
+    @UseGuards(AuthRolesGuard([...ROLES_ADMIN_EMPRESAS, ...ROLES_INVESTIGADORES]))
+    @ApiOperation({
+        summary: 'Api paara buscar una empresa. para usuarios con sesion',
+    })
     async findOnePrivate(
         @Param('idEmpresa', ParseIntPipe) idEmpresa: number,
         @Req() req: any,
         @Res() res: Response,
     ) {
-        // M-09: restringir acceso si es investigador sin asignación
+        // --- TAMBIÉN LA DEFINIMOS AQUÍ ---
         const isInvestigador = ROLES_INVESTIGADORES.includes(req.user.rol);
         const idUsuario = isInvestigador ? (req.user.sub as number) : undefined;
+        // ----------------------------------
+
         const empresa = await this.empresasService.findOnePrivate(idEmpresa, idUsuario);
         return OkRes(res, { empresa });
     }
 
     // =========================================================
-    // NUEVAS RUTAS PARA EDITAR Y ELIMINAR EMPRESAS
+    // RUTAS PARA EDITAR Y ELIMINAR EMPRESAS
     // =========================================================
 
     @Put('private/:idEmpresa')
@@ -115,10 +131,9 @@ export class EmpresasController {
     @ApiNotFoundResponse(SwaggerNotFoundCommon())
     async updateEmpresaPrivate(
         @Param('idEmpresa', ParseIntPipe) idEmpresa: number,
-        @Body() data: any, // Idealmente deberías crear un UpdateEmpresaDto
+        @Body() data: any, 
         @Res() res: Response,
     ) {
-        // Llama a la función del servicio (tendrás que crearla si no existe)
         const empresa = await this.empresasService.updateEmpresa(idEmpresa, data);
         return OkRes(res, { message: 'Empresa actualizada correctamente', empresa });
     }
@@ -134,7 +149,6 @@ export class EmpresasController {
         @Param('idEmpresa', ParseIntPipe) idEmpresa: number,
         @Res() res: Response,
     ) {
-        // Llama a la función del servicio (tendrás que crearla si no existe)
         await this.empresasService.deleteEmpresa(idEmpresa);
         return OkRes(res, { message: 'Empresa eliminada del sistema' });
     }

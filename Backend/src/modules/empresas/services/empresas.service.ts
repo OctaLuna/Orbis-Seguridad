@@ -81,122 +81,125 @@ export class EmpresasService {
 	}
 
 	async findAllCardsPrivate(params: FindAllEmpresasCardsParamsDto, idUsuario?: number) {
-		const query = this.empresaRepository
-			.createQueryBuilder('empresa')
-			.leftJoinAndSelect('empresa.imagenes', 'imagen')
-			.leftJoinAndSelect('empresa.hitos', 'hito')
-			.leftJoin('empresa.sedes', 'sedeCentral', 'sedeCentral.esCentral = true')
-			.leftJoin('sedeCentral.departamento', 'departamento')
-			.leftJoin('empresa.rubrosEmpresa', 'rubroEmpresa')
-			.leftJoinAndSelect('rubroEmpresa.rubro', 'rubro')
-			.leftJoin('empresa.tiposSocietariosEmpresa', 'tipoEmpSoc')
-			.leftJoin('tipoEmpSoc.tipoSocietario', 'tipoSocietario')
-			.leftJoin('empresa.fundadores', 'fundador');
+        const query = this.empresaRepository
+            .createQueryBuilder('empresa')
+            .leftJoinAndSelect('empresa.imagenes', 'imagen')
+            .leftJoinAndSelect('empresa.hitos', 'hito')
+            .leftJoin('empresa.sedes', 'sedeCentral', 'sedeCentral.esCentral = true')
+            .leftJoin('sedeCentral.departamento', 'departamento')
+            .leftJoin('empresa.rubrosEmpresa', 'rubroEmpresa')
+            .leftJoinAndSelect('rubroEmpresa.rubro', 'rubro')
+            .leftJoin('empresa.tiposSocietariosEmpresa', 'tipoEmpSoc')
+            .leftJoin('tipoEmpSoc.tipoSocietario', 'tipoSocietario')
+            .leftJoin('empresa.fundadores', 'fundador');
 
-		// Row-level security: filtrar por empresas asignadas si es investigador
-		if (idUsuario) {
-			query.innerJoin(
-				'investigador_empresa',
-				'ie',
-				'ie.id_empresa = empresa.id AND ie.id_usuario = :idUsuario',
-				{ idUsuario },
-			);
-		}
+        // =========================================================
+        // EL BUG DE OCTAVIO ARREGLADO:
+        // Filtramos usando la tabla puente real (investigador_rubro)
+        // =========================================================
+        if (idUsuario) {
+            query.innerJoin(
+                'investigador_rubro', // <--- LA TABLA CORRECTA QUE VIMOS EN PGADMIN
+                'ir',
+                'ir.id_rubro = rubro.id AND ir.id_usuario = :idUsuario',
+                { idUsuario },
+            );
+        }
 
-		query
-			.select([
-				'empresa.id',
-				'empresa.nombreComercial',
-				'imagen.id',
-				'imagen.url',
-				'hito.id',
-				'hito.nombre',
-				'hito.fecha',
-				'sedeCentral.id',
-				'sedeCentral.esCentral',
-				'departamento.id',
-				'departamento.nombre',
-				'rubroEmpresa.id',
-				'rubro.id',
-				'rubro.nombre',
-			]);
+        query
+            .select([
+                'empresa.id',
+                'empresa.nombreComercial',
+                'imagen.id',
+                'imagen.url',
+                'hito.id',
+                'hito.nombre',
+                'hito.fecha',
+                'sedeCentral.id',
+                'sedeCentral.esCentral',
+                'departamento.id',
+                'departamento.nombre',
+                'rubroEmpresa.id',
+                'rubro.id',
+                'rubro.nombre',
+            ]);
 
-		const rubros = params.getRubros();
-		if (rubros.length > 0) query.andWhere('rubro.id IN (:...rubros)', { rubros });
+        const rubros = params.getRubros();
+        if (rubros.length > 0) query.andWhere('rubro.id IN (:...rubros)', { rubros });
 
-		const departamentos = params.getDepartamentos();
-		if (departamentos.length > 0)
-			query.andWhere('departamento.id IN (:...departamentos)', { departamentos });
+        const departamentos = params.getDepartamentos();
+        if (departamentos.length > 0)
+            query.andWhere('departamento.id IN (:...departamentos)', { departamentos });
 
-		const tiposSocietarios = params.getTiposSocietarios();
-		if (tiposSocietarios.length > 0)
-			query.andWhere('tipoSocietario.id IN (:...tiposSocietarios)', { tiposSocietarios });
+        const tiposSocietarios = params.getTiposSocietarios();
+        if (tiposSocietarios.length > 0)
+            query.andWhere('tipoSocietario.id IN (:...tiposSocietarios)', { tiposSocietarios });
 
-		const antiguedad = params.getAntiguedad();
-		if (antiguedad)
-			query.andWhere('EXTRACT(YEAR FROM empresa.fechaFundacion) <= :antiguedad', { antiguedad });
+        const antiguedad = params.getAntiguedad();
+        if (antiguedad)
+            query.andWhere('EXTRACT(YEAR FROM empresa.fechaFundacion) <= :antiguedad', { antiguedad });
 
-		const nombre = params.getNombre();
-		if (nombre && nombre.trim() !== '') {
-			query.andWhere('LOWER(empresa.nombreComercial) LIKE LOWER(:nombre)', {
-				nombre: `%${nombre.trim()}%`,
-			});
-		}
+        const nombre = params.getNombre();
+        if (nombre && nombre.trim() !== '') {
+            query.andWhere('LOWER(empresa.nombreComercial) LIKE LOWER(:nombre)', {
+                nombre: `%${nombre.trim()}%`,
+            });
+        }
 
-		const fundador = params.getFundador();
-		if (fundador && fundador.trim() !== '') {
-			query.andWhere('LOWER(fundador.nombre) LIKE LOWER(:fundador)', {
-				fundador: `%${fundador.trim()}%`,
-			});
-		}
+        const fundador = params.getFundador();
+        if (fundador && fundador.trim() !== '') {
+            query.andWhere('LOWER(fundador.nombre) LIKE LOWER(:fundador)', {
+                fundador: `%${fundador.trim()}%`,
+            });
+        }
 
-		const page = params.page;
-		const limit = params.limit;
-		const skip = (page - 1) * limit;
+        const page = params.page;
+        const limit = params.limit;
+        const skip = (page - 1) * limit;
 
-		query.orderBy('empresa.nombreComercial', 'ASC')
-			.skip(skip)
-			.take(limit);
+        query.orderBy('empresa.nombreComercial', 'ASC')
+            .skip(skip)
+            .take(limit);
 
-		const [empresas, total] = await query.getManyAndCount();
-		const pages = Math.ceil(total / limit);
+        const [empresas, total] = await query.getManyAndCount();
+        const pages = Math.ceil(total / limit);
 
-		const data = empresas.map((empresa) => {
-			const sede = (empresa as any).sedes?.[0];
-			const depa = sede?.departamento;
+        const data = empresas.map((empresa) => {
+            const sede = (empresa as any).sedes?.[0];
+            const depa = sede?.departamento;
 
-			return {
-				id: empresa.id,
-				nombreComercial: empresa.nombreComercial,
-				imagenes: empresa.imagenes?.map((img) => ({
-					id: img.id,
-					url: img.url,
-				})) || [],
-				hitos: empresa.hitos?.map((h) => ({
-					id: h.id,
-					nombre: h.nombre,
-					fecha: h.fecha,
-				})) || [],
-				sedeCentral: {
-					id: depa?.id,
-					nombre: depa?.nombre,
-				},
-				rubros: empresa.rubrosEmpresa?.map((r) => ({
-					id: r.rubro?.id,
-					nombre: r.rubro?.nombre,
-				})) || [],
-			};
-		});
+            return {
+                id: empresa.id,
+                nombreComercial: empresa.nombreComercial,
+                imagenes: empresa.imagenes?.map((img) => ({
+                    id: img.id,
+                    url: img.url,
+                })) || [],
+                hitos: empresa.hitos?.map((h) => ({
+                    id: h.id,
+                    nombre: h.nombre,
+                    fecha: h.fecha,
+                })) || [],
+                sedeCentral: {
+                    id: depa?.id,
+                    nombre: depa?.nombre,
+                },
+                rubros: empresa.rubrosEmpresa?.map((r) => ({
+                    id: r.rubro?.id,
+                    nombre: r.rubro?.nombre,
+                })) || [],
+            };
+        });
 
-		const response = new FindAllEmpresasCardsPaginationResponseDto();
-		response.data = data;
-		response.page = page;
-		response.limit = limit;
-		response.total = total;
-		response.pages = pages;
+        const response = new FindAllEmpresasCardsPaginationResponseDto();
+        response.data = data;
+        response.page = page;
+        response.limit = limit;
+        response.total = total;
+        response.pages = pages;
 
-		return response;
-	}
+        return response;
+    }
 
 
 	async findAllCardsPublic(params: FindAllEmpresasCardsPublicParamsDto) {

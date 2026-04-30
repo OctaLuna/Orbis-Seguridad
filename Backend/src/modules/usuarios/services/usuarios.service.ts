@@ -2,7 +2,7 @@ import { BadRequestException, HttpException, Injectable, NotFoundException } fro
 import { CreateUsuarioDto } from '../dto/create-usuario.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Usuario } from '../entities/usuario.entity';
-import { DataSource, LessThanOrEqual, Repository } from 'typeorm';
+import { DataSource, LessThanOrEqual, Repository, Not } from 'typeorm';
 import { OptionsFindOne } from 'src/common/classes';
 import { RolesEnum } from 'src/shared/constants/roles.const';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
@@ -10,6 +10,8 @@ import * as bcrypt from 'bcrypt';
 import { addDays } from 'date-fns';
 import { PasswordValidatorService } from 'src/common/services/password-validator.service';
 import { PasswordHistoryService } from './password-history.service';
+ 
+// (Asegúrate de que 'Not' esté importado de 'typeorm')
 
 export class CambiarPasswordDto {
     @IsString() @IsOptional()
@@ -45,6 +47,10 @@ export class UsuariosService {
                 failedAttempts: true,
                 expiracion: true,
             },
+            // 🔥 EL ESCUDO INVISIBLE AQUÍ 🔥
+            where: {
+                idRol: Not(1) // Esto le dice a la BD: "Tráeme todos, EXCEPTO los de rol 1"
+            }
         });
         return usuario;
     }
