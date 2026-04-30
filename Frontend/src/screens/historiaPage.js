@@ -328,14 +328,7 @@ const AboutUsPage = () => {
         </section>
 
         {/* FOOTER MEJORADO */}
-        <footer className="mt-24 pt-12 border-t border-[#072D42]/10 text-center max-w-4xl mx-auto">
-          <p className="text-base font-light tracking-wide text-[#072D42]/60 font-montserrat">
-            © {new Date().getFullYear()} Archivo Histórico Empresarial Boliviano
-          </p>
-          <p className="text-sm font-light tracking-wide text-[#072D42]/40 font-montserrat mt-2">
-            Preservando la memoria empresarial de Bolivia
-          </p>
-        </footer>
+      
       </main>
     </div>
   );
