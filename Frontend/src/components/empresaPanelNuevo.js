@@ -534,3 +534,5 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
 };
 
 export default EmpresasPanel;
+
+//Version Final del panel de empresas, con toda la funcionalidad de edición, creación y eliminación integrada, además de un sistema de cache inteligente para mejorar la experiencia del usuario.
