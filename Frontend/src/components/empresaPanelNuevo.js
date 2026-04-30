@@ -22,7 +22,6 @@ const normalizarTexto = (valor) =>
     : '';
 
 const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
-  console.log("🕵️‍♂️ DATOS DEL USUARIO LOGUEADO:", loggedInUser);
   const [fullEmpresas, setFullEmpresas] = useState([]);
   const [empresas, setEmpresas] = useState([]);
   const [busqueda, setBusqueda] = useState('');
@@ -169,36 +168,8 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
     });
   }, []);
 
-  // ====== EFECTO PRINCIPAL DE FILTRADO (AQUÍ ESTÁ LA MAGIA) ======
   useEffect(() => {
     let lista = [...fullEmpresas];
-
-    // --- 1. FILTRO DE SEGURIDAD POR ROL (INVESTIGADOR JUNIOR) ---
-    const rolUsuario = Number(loggedInUser?.idRol || loggedInUser?.rol);
-    
-    // VERIFICA ESTO: Cambia el "5" por el ID real del Investigador Junior en tu base de datos
-    const esInvestigadorJunior = rolUsuario === 5; 
-
-    if (esInvestigadorJunior) {
-      // VERIFICA ESTO: Cambia "rubrosPermitidos" por la propiedad exacta que manda tu backend
-      const rubrosPermitidos = loggedInUser?.rubrosPermitidos || [];
-      
-      if (rubrosPermitidos.length > 0) {
-        const rubrosPermitidosNormalizados = rubrosPermitidos.map(normalizarTexto);
-        
-        // Filtramos para que solo vea las empresas de sus rubros asignados
-        lista = lista.filter((empresaActual) => {
-          const rubroEmpresaNormalizado = normalizarTexto(empresaActual.rubro);
-          return rubrosPermitidosNormalizados.includes(rubroEmpresaNormalizado);
-        });
-      } else {
-        // Si es junior pero por alguna razón no tiene rubros asignados, no ve nada por seguridad
-        lista = [];
-      }
-    }
-    // -------------------------------------------------------------
-
-    // --- 2. FILTROS NORMALES DE LA UI ---
     const terminoNormalizado = normalizarTexto(busqueda);
     const departamentosNormalizados = departamentosActivos
       .map(normalizarTexto)
@@ -221,7 +192,7 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
     }
 
     setEmpresas(lista);
-  }, [fullEmpresas, busqueda, departamentosActivos, loggedInUser]); // <--- loggedInUser añadido aquí
+  }, [fullEmpresas, busqueda, departamentosActivos]);
 
   // Función para cargar detalle de empresa con cache
   const loadEmpresaDetail = useCallback(async (empresaId) => {
@@ -470,7 +441,7 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
           onVistaToggle={toggleVista}
           loggedInUser={loggedInUser}
           onAddClick={handleCreateClick} // <--- AQUÍ MANDAS LA ORDEN
-        />
+/>
 
         {/* AQUÍ INYECTAMOS EL USUARIO Y LAS FUNCIONES A EMPRESALISTA */}
         <EmpresaLista

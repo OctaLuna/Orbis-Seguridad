@@ -85,9 +85,9 @@ const EmpresaFormModal = ({ mode, company, sizes, isOpen, onClose, onSubmit }) =
 
   if (!isOpen) return null;
 
-  //const handleFormSubmit = (data) => {
-   // onSubmit(data);
-  //};
+  const handleFormSubmit = (data) => {
+    onSubmit(data);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
