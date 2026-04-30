@@ -767,22 +767,11 @@ let AuthService = class AuthService {
             mustChangePassword = true;
             await this.usuariosService.marcarPasswordExpirado(usuario.id);
         }
-        let rubrosAsignados = [];
-        if (usuario.idRol === 5) {
-            if (typeof this.usuariosService['obtenerRubrosPorUsuario'] === 'function') {
-                rubrosAsignados = await this.usuariosService.obtenerRubrosPorUsuario(usuario.id);
-            }
-            else {
-                console.warn('⚠️ FALTA IMPLEMENTAR: obtenerRubrosPorUsuario en UsuariosService');
-            }
-        }
         const payload = {
-            id: usuario.id,
             sub: usuario.id,
             usuario: usuario.usuario,
-            idRol: usuario.idRol,
+            rol: usuario.idRol,
             must_change_password: mustChangePassword,
-            rubrosPermitidos: rubrosAsignados
         };
         const { secret, expiresIn } = this.jwtConfig.get();
         const token = this.jwtService.sign(payload, { secret, expiresIn });
@@ -792,7 +781,6 @@ let AuthService = class AuthService {
             idUsuario: usuario.id,
             idRol: usuario.idRol,
             must_change_password: mustChangePassword,
-            rubrosPermitidos: rubrosAsignados
         };
     }
     async solicitarResetPassword(correo) {
@@ -16998,24 +16986,6 @@ let UsuariosService = class UsuariosService {
             resetToken: null,
             resetTokenExpires: null,
         });
-    }
-    async obtenerRubrosPorUsuario(idUsuario) {
-        console.log(`Buscando rubros permitidos en BD para el usuario ID: ${idUsuario}`);
-        try {
-            const resultados = await this.usuarioRepository.query(`
-                SELECT r.nombre_rubro
-                FROM investigador_rubro ir
-                INNER JOIN rubros r ON ir.id_rubro = r.id_rubro
-                WHERE ir.id_usuario = $1
-                `, [idUsuario]);
-            const rubrosPermitidos = resultados.map((fila) => fila.nombre_rubro);
-            console.log(`Rubros encontrados para usuario ${idUsuario}:`, rubrosPermitidos);
-            return rubrosPermitidos;
-        }
-        catch (error) {
-            console.error('Error en BD al obtener rubros del investigador:', error);
-            return [];
-        }
     }
 };
 exports.UsuariosService = UsuariosService;
