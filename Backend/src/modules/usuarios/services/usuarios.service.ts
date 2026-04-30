@@ -27,6 +27,7 @@ export class UsuariosService {
         private readonly passwordValidator: PasswordValidatorService,
         private readonly passwordHistoryService: PasswordHistoryService,
     ) { }
+    
     create(createUsuarioDto: CreateUsuarioDto) {
         return 'This action adds a new usuario';
     }
@@ -235,5 +236,41 @@ export class UsuariosService {
             resetToken:         null as unknown as string,
             resetTokenExpires:  null as unknown as Date,
         });
+    }
+
+    // =========================================================
+    // MAGIA PARA EL INVESTIGADOR JUNIOR (RUBROS)
+    // =========================================================
+    // =========================================================
+    // LÓGICA REAL PARA EL INVESTIGADOR JUNIOR (RUBROS)
+    // =========================================================
+    async obtenerRubrosPorUsuario(idUsuario: number): Promise<string[]> {
+        console.log(`Buscando rubros permitidos en BD para el usuario ID: ${idUsuario}`);
+
+        try {
+            // Ejecutamos una consulta SQL pura uniendo la tabla puente con el catálogo.
+            // Usamos las columnas exactas de tu pgAdmin4.
+            const resultados = await this.usuarioRepository.query(
+                `
+                SELECT r.nombre_rubro
+                FROM investigador_rubro ir
+                INNER JOIN rubros r ON ir.id_rubro = r.id_rubro
+                WHERE ir.id_usuario = $1
+                `,
+                [idUsuario] // El $1 se reemplaza de forma segura por el idUsuario
+            );
+
+            // La base de datos nos devuelve un arreglo de objetos: [{ nombre_rubro: 'Salud' }, ...]
+            // Lo mapeamos para sacar solo los textos y devolver: ['Salud', ...]
+            const rubrosPermitidos = resultados.map((fila: any) => fila.nombre_rubro);
+            
+            console.log(`Rubros encontrados para usuario ${idUsuario}:`, rubrosPermitidos);
+            
+            return rubrosPermitidos;
+
+        } catch (error) {
+            console.error('Error en BD al obtener rubros del investigador:', error);
+            return []; // Por seguridad, si falla la BD, no le damos acceso a nada.
+        }
     }
 }

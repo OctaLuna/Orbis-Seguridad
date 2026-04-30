@@ -17000,6 +17000,24 @@ let UsuariosService = class UsuariosService {
             resetTokenExpires: null,
         });
     }
+    async obtenerRubrosPorUsuario(idUsuario) {
+        console.log(`Buscando rubros permitidos en BD para el usuario ID: ${idUsuario}`);
+        try {
+            const resultados = await this.usuarioRepository.query(`
+                SELECT r.nombre_rubro
+                FROM investigador_rubro ir
+                INNER JOIN rubros r ON ir.id_rubro = r.id_rubro
+                WHERE ir.id_usuario = $1
+                `, [idUsuario]);
+            const rubrosPermitidos = resultados.map((fila) => fila.nombre_rubro);
+            console.log(`Rubros encontrados para usuario ${idUsuario}:`, rubrosPermitidos);
+            return rubrosPermitidos;
+        }
+        catch (error) {
+            console.error('Error en BD al obtener rubros del investigador:', error);
+            return [];
+        }
+    }
 };
 exports.UsuariosService = UsuariosService;
 exports.UsuariosService = UsuariosService = __decorate([
