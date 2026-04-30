@@ -22,6 +22,7 @@ const normalizarTexto = (valor) =>
     : '';
 
 const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
+  console.log("🕵️‍♂️ DATOS DEL USUARIO LOGUEADO:", loggedInUser);
   const [fullEmpresas, setFullEmpresas] = useState([]);
   const [empresas, setEmpresas] = useState([]);
   const [busqueda, setBusqueda] = useState('');
@@ -44,7 +45,7 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
 
   const canViewPrivate = useMemo(() => {
     if (!loggedInUser?.idRol) return false;
-    return [1, 2, 3].includes(loggedInUser.idRol);
+    return [1, 2, 3, 4, 5].includes(loggedInUser.idRol);
   }, [loggedInUser?.idRol]);
 
   const [privateDetailEnabled, setPrivateDetailEnabled] = useState(() => canViewPrivate && !privateDetailsGloballyDisabled);
@@ -169,35 +170,32 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
   }, []);
 
   // ====== EFECTO PRINCIPAL DE FILTRADO (AQUÍ ESTÁ LA MAGIA) ======
+  // ====== EFECTO PRINCIPAL DE FILTRADO (MAGIA DEL JUNIOR) ======
   useEffect(() => {
     let lista = [...fullEmpresas];
 
     // --- 1. FILTRO DE SEGURIDAD POR ROL (INVESTIGADOR JUNIOR) ---
     const rolUsuario = Number(loggedInUser?.idRol || loggedInUser?.rol);
-    
-    // VERIFICA ESTO: Cambia el "5" por el ID real del Investigador Junior en tu base de datos
     const esInvestigadorJunior = rolUsuario === 5; 
 
     if (esInvestigadorJunior) {
-      // VERIFICA ESTO: Cambia "rubrosPermitidos" por la propiedad exacta que manda tu backend
       const rubrosPermitidos = loggedInUser?.rubrosPermitidos || [];
       
       if (rubrosPermitidos.length > 0) {
         const rubrosPermitidosNormalizados = rubrosPermitidos.map(normalizarTexto);
         
-        // Filtramos para que solo vea las empresas de sus rubros asignados
         lista = lista.filter((empresaActual) => {
           const rubroEmpresaNormalizado = normalizarTexto(empresaActual.rubro);
           return rubrosPermitidosNormalizados.includes(rubroEmpresaNormalizado);
         });
       } else {
-        // Si es junior pero por alguna razón no tiene rubros asignados, no ve nada por seguridad
+        // Si es junior y no tiene rubros, ve 0 empresas
         lista = [];
       }
     }
     // -------------------------------------------------------------
 
-    // --- 2. FILTROS NORMALES DE LA UI ---
+    // --- 2. FILTROS NORMALES (Buscador y Mapa) ---
     const terminoNormalizado = normalizarTexto(busqueda);
     const departamentosNormalizados = departamentosActivos
       .map(normalizarTexto)
@@ -220,8 +218,7 @@ const EmpresasPanel = ({ loggedInUser, canEdit = false }) => {
     }
 
     setEmpresas(lista);
-  }, [fullEmpresas, busqueda, departamentosActivos, loggedInUser]); // <--- loggedInUser añadido aquí
-
+  }, [fullEmpresas, busqueda, departamentosActivos, loggedInUser]);
   // Función para cargar detalle de empresa con cache
   const loadEmpresaDetail = useCallback(async (empresaId) => {
     const cacheKey = CACHE_KEYS.EMPRESA_DETAIL(empresaId);
