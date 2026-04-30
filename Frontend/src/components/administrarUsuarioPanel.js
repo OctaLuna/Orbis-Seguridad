@@ -799,7 +799,7 @@ const AdministrarUsuarioPanel = () => {
                       type="text"
                       value={form.apellidoPaterno}
                       onChange={(e) => setField('apellidoPaterno', e.target.value)}
-                      placeholder="Ej: Luna"
+                      placeholder="Ej: Mamani"
                       className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 font-miles"
                     />
                   </div>
