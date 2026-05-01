@@ -1,0 +1,9 @@
+{
+  "short_name": "Orbis",
+  "name": "Orbis Seguridad",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#072D42",
+  "background_color": "#FEFCFB"
+}
